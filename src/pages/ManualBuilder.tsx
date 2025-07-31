@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllTopicsWithURLs, TopicWithURL } from '../lib/data/topics';
+import { getAllChapters } from '../lib/data/questions';
 import { Navigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { SavePlaylistModal } from '../components/SavePlaylistModal';
@@ -18,6 +19,12 @@ interface LocationState {
 interface Chapter {
   id: string;
   name: string;
+  description?: string;
+  questionCountBreakdowns?: number;
+  questionCountPractice?: number;
+  questionCountTest?: number;
+  subject?: string;
+  section?: string;
 }
 
 export const ManualBuilder: React.FC = () => {
@@ -53,28 +60,29 @@ export const ManualBuilder: React.FC = () => {
     document.title = 'Build Course Manually - AuthFlow';
   }, []);
 
-  // Fetch topics using the existing structure
+  // Fetch all chapters and topics
   useEffect(() => {
-    const loadChapterTopics = async () => {
+    const loadAllChaptersAndTopics = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        // Use chapter-aware topics loading function
-        const topicsData = await getAllTopicsWithURLs(selectedChapterFromDiagnostic);
+        // Fetch all chapters from Firebase
+        const allChapters = await getAllChapters();
+        console.log('Loaded chapters from Firebase:', allChapters);
         
-        // Create a single chapter with all topics based on selected chapter
-        const selectedChapter: Chapter = {
-          id: selectedChapterFromDiagnostic,
-          name: selectedChapterFromDiagnostic
-        };
+        // Set chapters from Firebase
+        setChapters(allChapters);
         
-        setChapters([selectedChapter]);
-        setChapterTopics({ [selectedChapterFromDiagnostic]: topicsData });
+        // Load topics for the selected chapter (from diagnostic or default to first chapter)
+        const defaultChapter = selectedChapterFromDiagnostic || (allChapters.length > 0 ? allChapters[0].id : 'Vectors');
+        const topicsData = await getAllTopicsWithURLs(defaultChapter);
+        
+        setChapterTopics({ [defaultChapter]: topicsData });
         setTopics(topicsData); // Keep the existing topics array for compatibility
         
-        // Expand the selected chapter by default
-        setExpanded({ [selectedChapterFromDiagnostic]: true });
+        // Expand the default chapter
+        setExpanded({ [defaultChapter]: true });
 
         // Handle preselected topics from diagnostic
         if (preselectedFromDiagnostic.length > 0) {
@@ -93,14 +101,14 @@ export const ManualBuilder: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error loading chapter topics:', error);
-        setError('Failed to load topics. Please try again.');
+        console.error('Error loading chapters and topics:', error);
+        setError('Failed to load chapters and topics. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadChapterTopics();
+    loadAllChaptersAndTopics();
   }, [preselectedFromDiagnostic, selectedChapterFromDiagnostic]);
 
   // Redirect unauthenticated users
@@ -154,8 +162,24 @@ export const ManualBuilder: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const toggleChapter = (chapterId: string): void => {
+  const toggleChapter = async (chapterId: string): Promise<void> => {
+    const isExpanding = !expanded[chapterId];
+    
+    // Update expanded state
     setExpanded(e => ({ ...e, [chapterId]: !e[chapterId] }));
+    
+    // If expanding and topics not loaded yet, load them
+    if (isExpanding && !chapterTopics[chapterId]) {
+      try {
+        console.log(`Loading topics for chapter: ${chapterId}`);
+        const topicsData = await getAllTopicsWithURLs(chapterId);
+        setChapterTopics(prev => ({ ...prev, [chapterId]: topicsData }));
+      } catch (error) {
+        console.error(`Error loading topics for chapter ${chapterId}:`, error);
+        // Revert expansion if loading failed
+        setExpanded(e => ({ ...e, [chapterId]: false }));
+      }
+    }
   };
 
   // Filter topics based on search term (kept for compatibility)

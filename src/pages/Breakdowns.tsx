@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAllChapters } from '../lib/data/questions';
 import { Logo } from '../components/Logo';
 import { CircularCheckbox } from '../components/CircularCheckbox';
 import { BreakdownQuestionCard } from '../components/breakdowns/BreakdownQuestionCard';
@@ -10,7 +11,6 @@ import { FirebaseImage } from '../components/breakdowns/FirebaseImage';
 import { evaluateMulti } from '../components/breakdowns/utils';
 import { OptionState } from '../components/breakdowns/types';
 import { 
-  chapters, 
   breakdownQuestions, 
   getQuestionsByChapter, 
   getQuestionById, 
@@ -22,6 +22,17 @@ type ViewMode = 'list' | 'question' | 'slides';
 type QuestionType = 'MCQ' | 'Multiple Answer' | 'Numerical';
 type AttemptStatus = 'Not Attempted' | 'Correct Answer' | 'Wrong Answer';
 
+interface FirebaseChapter {
+  id: string;
+  name: string;
+  description?: string;
+  questionCountBreakdowns?: number;
+  questionCountPractice?: number;
+  questionCountTest?: number;
+  subject?: string;
+  section?: string;
+}
+
 export const Breakdowns: React.FC = () => {
   const { user, loading } = useAuth();
   const [selectedChapter, setSelectedChapter] = useState('vectors');
@@ -31,9 +42,42 @@ export const Breakdowns: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [optionStates, setOptionStates] = useState<OptionState[]>([]);
   
+  // Firebase chapters state
+  const [firebaseChapters, setFirebaseChapters] = useState<FirebaseChapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(true);
+  const [chaptersError, setChaptersError] = useState<string | null>(null);
+  
   // Filter states
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<Set<QuestionType>>(new Set(['MCQ', 'Multiple Answer', 'Numerical']));
   const [selectedAttemptStatuses, setSelectedAttemptStatuses] = useState<Set<AttemptStatus>>(new Set(['Not Attempted', 'Correct Answer', 'Wrong Answer']));
+
+  // Load chapters from Firebase
+  useEffect(() => {
+    const loadChapters = async () => {
+      try {
+        setChaptersLoading(true);
+        setChaptersError(null);
+        console.log('Loading chapters from Firebase for Breakdowns page...');
+        
+        const chapters = await getAllChapters();
+        console.log('Loaded chapters:', chapters);
+        
+        setFirebaseChapters(chapters);
+        
+        // Set default chapter if current selection is not in the loaded chapters
+        if (chapters.length > 0 && !chapters.find(c => c.id === selectedChapter)) {
+          setSelectedChapter(chapters[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading chapters:', error);
+        setChaptersError('Failed to load chapters from Firebase');
+      } finally {
+        setChaptersLoading(false);
+      }
+    };
+
+    loadChapters();
+  }, [selectedChapter]);
 
   if (loading) {
     return (
@@ -306,27 +350,50 @@ export const Breakdowns: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Chapters</h2>
               
               <div className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                {chapters.map((chapter) => (
-                  <button
-                    key={chapter.id}
-                    onClick={() => setSelectedChapter(chapter.id)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
-                      selectedChapter === chapter.id
-                        ? 'bg-primary-50 border border-primary-200 text-primary-900'
-                        : 'hover:bg-gray-50 border border-transparent'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{chapter.name}</p>
-                        <p className="text-sm text-gray-500">{chapter.questionCount} questions</p>
+                {chaptersLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                    <span className="ml-2 text-sm text-gray-500">Loading chapters...</span>
+                  </div>
+                ) : chaptersError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-red-500 mb-2">{chaptersError}</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-xs text-primary-600 hover:underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : firebaseChapters.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">No chapters found</p>
+                  </div>
+                ) : (
+                  firebaseChapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => setSelectedChapter(chapter.id)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors ${
+                        selectedChapter === chapter.id
+                          ? 'bg-primary-50 border border-primary-200 text-primary-900'
+                          : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{chapter.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {chapter.questionCountBreakdowns || 0} questions
+                          </p>
+                        </div>
+                        {selectedChapter === chapter.id && (
+                          <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
+                        )}
                       </div>
-                      {selectedChapter === chapter.id && (
-                        <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))
+                )}
               </div>
 
               {/* Question Type Filter */}
