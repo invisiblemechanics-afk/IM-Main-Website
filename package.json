@@ -8,16 +8,24 @@
     "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "seed": "node seed-firebase.mjs",
+    "seed:chapters": "node firebase/seed/seedChapters.js",
+    "seed:breakdowns": "node firebase/seed/seedBreakdowns.js",
+    "update:chapters": "node firebase/seed/updateChapters.js",
+    "emulators:start": "firebase emulators:start"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@types/node": "^24.1.0",
     "firebase": "^12.0.0",
+    "firebase-admin": "^13.4.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-player": "^3.3.1",
     "react-router-dom": "^7.7.1",
+    "ts-node": "^10.9.2",
     "zod": "^4.0.10"
   },
   "devDependencies": {

@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own playlist documents
+    match /users/{userId}/playlists/{playlistId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read from Chapters collection
+    match /Chapters/{document=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // chapters: public read only
+    match /chapters/{cId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // breakdowns: public read only
+    match /breakdowns/{bId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // slides under breakdowns: public read only
+    match /breakdowns/{bId}/slides/{sId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // userAnswers: only the owner may CRUD
+    match /userAnswers/{uaId} {
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+    }
+    
+    // Default rule - deny all other operations
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

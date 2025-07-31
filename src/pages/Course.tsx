@@ -29,8 +29,8 @@ export const Course: React.FC = () => {
   // Redirect unauthenticated users
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -120,15 +120,15 @@ export const Course: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex-shrink-0">
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Logo />
-            <div className="text-white">
+            <div className="text-gray-900">
               <h1 className="text-lg font-semibold">{courseTitle}</h1>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-600">
                 {completedTopics.size} of {topics.length} topics completed • {getTotalDuration()}
               </p>
             </div>
@@ -136,7 +136,7 @@ export const Course: React.FC = () => {
           
           <Link
             to="/dashboard"
-            className="text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            className="text-gray-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors font-medium"
           >
             ← Back to Dashboard
           </Link>
@@ -144,38 +144,38 @@ export const Course: React.FC = () => {
         
         {/* Progress Bar */}
         <div className="mt-4">
-          <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Course Progress</span>
-            <span>{getCompletionPercentage()}%</span>
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span className="font-medium">Course Progress</span>
+            <span className="font-semibold text-primary-600">{getCompletionPercentage()}%</span>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
-              className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-primary-500 to-secondary-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${getCompletionPercentage()}%` }}
             />
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-auto">
         {/* Video Player - Left Side */}
-        <div className="flex-1 bg-black flex flex-col">
-          <div className="relative flex-1">
+        <div className="flex-1 bg-black flex flex-col min-h-[400px]">
+          <div className="relative flex-1 min-h-[300px]">
             {videoLoading && (
-              <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                  <p>Loading video...</p>
+              <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                  <p className="text-gray-700 font-medium">Loading video...</p>
                 </div>
               </div>
             )}
             
             {videoError && (
-              <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                <div className="text-center text-white">
+              <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
                   <div className="text-4xl mb-4">⚠️</div>
-                  <p className="text-lg mb-2">Video failed to load</p>
-                  <p className="text-sm text-gray-400 mb-4">{videoError}</p>
+                  <p className="text-lg mb-2 text-gray-900 font-semibold">Video failed to load</p>
+                  <p className="text-sm text-gray-600 mb-4">{videoError}</p>
                   <button
                     onClick={() => {
                       setVideoError(null);
@@ -185,7 +185,7 @@ export const Course: React.FC = () => {
                         video.load();
                       }
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition-colors"
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded transition-colors"
                   >
                     Retry
                   </button>
@@ -210,40 +210,40 @@ export const Course: React.FC = () => {
           </div>
           
           {/* Video Info */}
-          <div className="p-6 bg-gray-800 text-white">
-            <h2 className="text-2xl font-bold mb-2">{currentTopic.title}</h2>
-            <div className="flex items-center space-x-4 text-sm text-gray-400">
+          <div className="p-6 bg-white border-t border-gray-200">
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">{currentTopic.title}</h2>
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
                 {formatDuration(currentTopic.durationSec)}
               </div>
               <span>Topic {currentTopicIndex + 1} of {topics.length}</span>
               {completedTopics.has(currentTopic.id) && (
-                <div className="flex items-center text-green-400">
+                <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded-full">
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Completed
                 </div>
               )}
             </div>
             {currentTopic.description && (
-              <p className="mt-4 text-gray-300">{currentTopic.description}</p>
+              <p className="mt-4 text-gray-700">{currentTopic.description}</p>
             )}
           </div>
         </div>
 
         {/* Playlist - Right Side */}
-        <div className={`${sidebarMinimized ? 'w-16' : 'w-96'} bg-gray-800 border-l border-gray-700 flex flex-col transition-all duration-300 ease-in-out`}>
-          <div className="p-4 border-b border-gray-700 flex-shrink-0">
+        <div className={`${sidebarMinimized ? 'w-16' : 'w-96'} bg-white border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out shadow-lg min-h-[400px]`}>
+          <div className="p-4 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center justify-between">
               {!sidebarMinimized && (
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white mb-2">Course Content</h3>
-                  <p className="text-sm text-gray-400">{topics.length} topics • {getTotalDuration()}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Course Content</h3>
+                  <p className="text-sm text-gray-600">{topics.length} topics • {getTotalDuration()}</p>
                 </div>
               )}
               <button
                 onClick={() => setSidebarMinimized(!sidebarMinimized)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                 aria-label={sidebarMinimized ? 'Expand sidebar' : 'Minimize sidebar'}
               >
                 {sidebarMinimized ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
@@ -256,8 +256,8 @@ export const Course: React.FC = () => {
               <div
                 key={topic.id}
                 onClick={() => handleTopicSelect(index)}
-                className={`${sidebarMinimized ? 'p-2' : 'p-4'} border-b border-gray-700 cursor-pointer transition-colors hover:bg-gray-700 ${
-                  index === currentTopicIndex ? 'bg-indigo-900/30 border-l-4 border-l-indigo-500' : ''
+                className={`${sidebarMinimized ? 'p-2' : 'p-4'} border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-primary-50 ${
+                  index === currentTopicIndex ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''
                 }`}
                 title={sidebarMinimized ? topic.title : undefined}
               >
@@ -267,12 +267,12 @@ export const Course: React.FC = () => {
                       {completedTopics.has(topic.id) ? (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       ) : index === currentTopicIndex ? (
-                        <Play className="w-5 h-5 text-indigo-400" />
+                        <Play className="w-5 h-5 text-primary-400" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                       )}
                     </div>
-                    <div className="text-xs text-gray-400 text-center">
+                    <div className="text-xs text-gray-600 text-center font-medium">
                       {index + 1}
                     </div>
                   </div>
@@ -282,23 +282,23 @@ export const Course: React.FC = () => {
                       {completedTopics.has(topic.id) ? (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       ) : index === currentTopicIndex ? (
-                        <Play className="w-5 h-5 text-indigo-400" />
+                        <Play className="w-5 h-5 text-primary-400" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className={`font-medium text-sm ${
-                        index === currentTopicIndex ? 'text-indigo-300' : 'text-white'
+                      <h4 className={`font-semibold text-sm ${
+                        index === currentTopicIndex ? 'text-primary-700' : 'text-gray-900'
                       }`}>
                         {topic.title}
                       </h4>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-500 mt-1 font-medium">
                         {formatDuration(topic.durationSec)}
                       </p>
                       {topic.prereq.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           Prerequisites: {topic.prereq.length} topic{topic.prereq.length !== 1 ? 's' : ''}
                         </p>
                       )}

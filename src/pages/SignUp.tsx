@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { GoogleButton } from '../components/GoogleButton';
 import { Divider } from '../components/Divider';
 import { AuthInput } from '../components/AuthInput';
+import { CircularCheckbox } from '../components/CircularCheckbox';
 import { useAuthForm } from '../hooks/useAuthForm';
 
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,7 @@ import { Navigate } from 'react-router-dom';
 
 export const SignUp: React.FC = () => {
   const { user, loading } = useAuth();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const {
     formData,
     errors,
@@ -33,8 +35,8 @@ export const SignUp: React.FC = () => {
   // Redirect authenticated users to dashboard
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -44,11 +46,11 @@ export const SignUp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in">
         <div className="flex flex-col md:flex-row">
           {/* Brand Panel */}
-          <div className="md:w-1/2 bg-gradient-to-br from-purple-500 to-indigo-600 p-8 md:p-12 flex flex-col justify-center items-center text-white">
+          <div className="md:w-1/2 bg-gradient-to-br from-secondary-600 to-primary-600 p-8 md:p-12 flex flex-col justify-center items-center text-white">
             <div className="w-full max-w-sm">
               <div className="mb-8">
                 <Logo />
@@ -56,7 +58,7 @@ export const SignUp: React.FC = () => {
               <h1 className="text-3xl md:text-4xl font-bold mb-4">
                 Join us today
               </h1>
-              <p className="text-purple-100 text-lg leading-relaxed">
+              <p className="text-secondary-100 text-lg leading-relaxed">
                 Create your account and unlock a world of possibilities.
               </p>
               
@@ -72,13 +74,13 @@ export const SignUp: React.FC = () => {
           </div>
 
           {/* Form Panel */}
-          <div className="md:w-1/2 p-8 md:p-12 md:border-l border-gray-200 dark:border-gray-700">
+          <div className="md:w-1/2 p-8 md:p-12 md:border-l border-gray-200">
             <div className="w-full max-w-sm mx-auto">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Create your account
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600">
                   Sign up to get started with your new account
                 </p>
               </div>
@@ -90,7 +92,7 @@ export const SignUp: React.FC = () => {
                 {(errors.general || authError) && (
                   <div
                     role="alert"
-                    className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm"
+                    className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
                   >
                     {errors.general || authError}
                   </div>
@@ -131,7 +133,7 @@ export const SignUp: React.FC = () => {
                   testId="signup-confirm-password"
                 />
 
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600">
                   <p className="mb-2">Password must contain:</p>
                   <ul className="space-y-1 text-xs">
                     <li className="flex items-center">
@@ -155,18 +157,19 @@ export const SignUp: React.FC = () => {
 
                 <div className="text-sm">
                   <label className="flex items-start">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5"
-                      required
-                    />
-                    <span className="ml-2 text-gray-600 dark:text-gray-400">
+                    <div className="mt-0.5">
+                      <CircularCheckbox
+                        checked={agreedToTerms}
+                        onChange={() => setAgreedToTerms(!agreedToTerms)}
+                      />
+                    </div>
+                    <span className="ml-2 text-gray-600">
                       I agree to the{' '}
-                      <Link to="/terms" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                      <Link to="/terms" className="text-primary-600 hover:text-primary-700 hover:underline">
                         Terms of Service
                       </Link>{' '}
                       and{' '}
-                      <Link to="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                      <Link to="/privacy" className="text-primary-600 hover:text-primary-700 hover:underline">
                         Privacy Policy
                       </Link>
                     </span>
@@ -175,9 +178,9 @@ export const SignUp: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={!isFormValid || isLoading}
+                  disabled={!isFormValid || !agreedToTerms || isLoading}
                   data-testid="signup-submit"
-                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isLoading ? (
                     <>
@@ -190,11 +193,11 @@ export const SignUp: React.FC = () => {
                 </button>
               </form>
 
-              <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-6 text-center text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link
                   to="/auth/signin"
-                  className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+                  className="font-medium text-primary-600 hover:text-primary-700"
                 >
                   Sign in →
                 </Link>

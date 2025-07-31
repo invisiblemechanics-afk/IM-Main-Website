@@ -1,4 +1,4 @@
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, query, doc } from 'firebase/firestore';
 import { firestore } from '../firebase';
 
 export interface DiagnosticQuestion {
@@ -10,19 +10,61 @@ export interface DiagnosticQuestion {
   topicId: string;
 }
 
+export interface Chapter {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 /**
- * Fetches 15 random questions from the "Vectors - Questions" collection in Firestore
+ * Fetches all available chapters from the Chapters collection in Firestore
+ * @returns Promise<Chapter[]> - Array of available chapters
+ */
+export async function getAllChapters(): Promise<Chapter[]> {
+  try {
+    console.log('Fetching chapters from Firestore...');
+    
+    const chaptersCollection = collection(firestore, 'Chapters');
+    const querySnapshot = await getDocs(chaptersCollection);
+
+    console.log(`Found ${querySnapshot.docs.length} chapters in Firestore`);
+    
+    // Convert documents to chapter objects
+    const chapters: Chapter[] = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name || doc.id, // Use doc.id as fallback name
+        description: data.description || undefined,
+      };
+    });
+
+    return chapters;
+  } catch (error) {
+    console.error('Failed to fetch chapters from Firestore:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches 15 random questions from a specific chapter's diagnostic questions subcollection
+ * @param chapterId - The ID of the chapter to fetch questions for
  * @returns Promise<DiagnosticQuestion[]> - Array of 15 random questions
  */
-export async function getRandomDiagnosticQuestions(): Promise<DiagnosticQuestion[]> {
+export async function getRandomDiagnosticQuestions(chapterId: string = 'Vectors'): Promise<DiagnosticQuestion[]> {
   try {
-    console.log('Fetching questions from Firestore...');
+    console.log(`Fetching questions from Firestore for chapter: ${chapterId}...`);
     
-    // Query the Vectors - Questions collection
-    const questionsCollection = collection(firestore, 'Vectors - Questions');
+    // Query the Chapters/{chapterId}/{chapterId}-Diagnostic-Questions subcollection
+    const chapterDoc = doc(firestore, 'Chapters', chapterId);
+    const questionsCollection = collection(chapterDoc, `${chapterId}-Diagnostic-Questions`);
     const querySnapshot = await getDocs(questionsCollection);
 
-    console.log(`Found ${querySnapshot.docs.length} questions in Firestore`);
+    console.log(`Found ${querySnapshot.docs.length} questions in Firestore for ${chapterId}`);
+    
+    if (querySnapshot.docs.length === 0) {
+      throw new Error(`No diagnostic questions found for chapter: ${chapterId}`);
+    }
     
     // Convert documents to question objects
     const allQuestions: DiagnosticQuestion[] = querySnapshot.docs.map((doc) => {
@@ -37,14 +79,14 @@ export async function getRandomDiagnosticQuestions(): Promise<DiagnosticQuestion
       };
     });
 
-    // Shuffle and select 10 random questions
+    // Shuffle and select up to 15 random questions
     const shuffledQuestions = shuffleArray([...allQuestions]);
-    const selectedQuestions = shuffledQuestions.slice(0, 15);
+    const selectedQuestions = shuffledQuestions.slice(0, Math.min(15, shuffledQuestions.length));
 
-    console.log(`Selected ${selectedQuestions.length} random questions for diagnostic`);
+    console.log(`Selected ${selectedQuestions.length} random questions for diagnostic from ${chapterId}`);
     return selectedQuestions;
   } catch (error) {
-    console.error('Failed to fetch questions from Firestore:', error);
+    console.error(`Failed to fetch questions from Firestore for chapter ${chapterId}:`, error);
     throw error;
   }
 }

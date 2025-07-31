@@ -68,10 +68,10 @@ export const AuthInput: React.FC<AuthInputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           className={`
-            peer w-full px-3 pt-6 pb-2 border rounded-lg bg-transparent text-gray-900 dark:text-gray-100 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200
+            peer w-full px-3 pt-6 pb-2 border rounded-lg bg-transparent text-gray-900 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200
             ${error 
-              ? 'border-red-500 dark:border-red-400' 
-              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+              ? 'border-red-500' 
+              : 'border-gray-300 hover:border-gray-400'
             }
           `}
           placeholder={label}
@@ -85,8 +85,8 @@ export const AuthInput: React.FC<AuthInputProps> = ({
           className={`
             absolute left-3 transition-all duration-200 pointer-events-none
             ${isFloated 
-              ? 'top-2 text-xs text-indigo-600 dark:text-indigo-400' 
-              : 'top-4 text-gray-500 dark:text-gray-400'
+              ? 'top-2 text-xs text-primary-600' 
+              : 'top-4 text-gray-500'
             }
           `}
         >
@@ -102,7 +102,7 @@ export const AuthInput: React.FC<AuthInputProps> = ({
           <p className={`text-xs text-center mb-1 ${getStrengthColor(passwordStrength.score).text}`}>
             Password strength: {passwordStrength.label}
           </p>
-          <div className="h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
             <div
               className={`h-1 rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength.score).bg}`}
               style={{
@@ -117,7 +117,7 @@ export const AuthInput: React.FC<AuthInputProps> = ({
         <p
           id={errorId}
           role="alert"
-          className="mt-1 text-sm text-red-600 dark:text-red-400"
+          className="mt-1 text-sm text-red-600"
         >
           {error}
         </p>

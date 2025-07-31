@@ -27,7 +27,7 @@ export const GoogleButton: React.FC = () => {
         onClick={handleClick}
         disabled={isLoading}
         aria-label="Continue with Google"
-        className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <div className="w-5 h-5 mr-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
@@ -57,7 +57,7 @@ export const GoogleButton: React.FC = () => {
       {error && (
         <div
           role="alert"
-          className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm"
+          className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
         >
           {error}
         </div>

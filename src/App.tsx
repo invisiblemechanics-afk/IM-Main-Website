@@ -8,25 +8,20 @@ import { Dashboard } from './pages/Dashboard';
 import { Diagnostic } from './pages/Diagnostic';
 import { ManualBuilder } from './pages/ManualBuilder';
 import { Course } from './pages/Course';
+import { Breakdowns } from './pages/Breakdowns';
 
 function App() {
-  // Dark mode initialization
+  // Initialize clean white theme
   useEffect(() => {
-    // Check for saved theme preference or default to system preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      document.body.classList.add('dark');
-    } else {
-      document.body.classList.remove('dark');
-    }
+    // Remove any dark mode classes and ensure clean white theme
+    document.body.classList.remove('dark');
+    document.body.className = 'bg-gray-50';
   }, []);
 
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/auth/signin" element={<SignIn />} />
@@ -60,6 +55,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Course />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/breakdowns" 
+              element={
+                <ProtectedRoute>
+                  <Breakdowns />
                 </ProtectedRoute>
               } 
             />
