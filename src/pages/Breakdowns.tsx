@@ -192,17 +192,18 @@ export const Breakdowns: React.FC = () => {
   const handleQuestionClick = async (questionId: string) => {
     try {
       const question = await getFirebaseBreakdownQuestionById(questionId, selectedChapter);
+      console.log('handleQuestionClick - fetched question:', question);
       if (question) {
         setSelectedQuestion(question);
         setViewMode('question');
-              setSelectedOptions([]);
-      setIsSubmitted(false);
-      setNumericValue('');
-      if (question.options) {
-        setOptionStates(Array(question.options.length).fill('neutral'));
-      } else if (question.type === 'Numerical') {
-        setOptionStates(['neutral']);
-      }
+        setSelectedOptions([]);
+        setIsSubmitted(false);
+        setNumericValue('');
+        if (question.options) {
+          setOptionStates(Array(question.options.length).fill('neutral'));
+        } else if (question.type === 'Numerical') {
+          setOptionStates(['neutral']);
+        }
       }
     } catch (error) {
       console.error('Error loading breakdown question:', error);
@@ -234,46 +235,79 @@ export const Breakdowns: React.FC = () => {
 
     // Log for debugging
     console.log('Breakdown handleSubmit - selectedQuestion.correct:', selectedQuestion.correct);
+    console.log('Breakdown handleSubmit - selectedQuestion.answerIndex:', (selectedQuestion as any).answerIndex);
     console.log('Breakdown handleSubmit - selectedQuestion:', selectedQuestion);
     console.log('Breakdown handleSubmit - selectedOptions:', selectedOptions);
 
     // Normalize correct answers to numbers
     // For breakdown questions, the answer might be stored as 'answerIndex' instead of 'correct'
     let correctValue = selectedQuestion.correct;
-    if ((correctValue === undefined || correctValue === null) && 'answerIndex' in selectedQuestion) {
-      correctValue = (selectedQuestion as any).answerIndex;
-      console.log('Using answerIndex field:', correctValue);
+    
+    // Try multiple field names for the correct answer
+    if (correctValue === undefined || correctValue === null) {
+      if (selectedQuestion.answerIndex !== undefined) {
+        correctValue = selectedQuestion.answerIndex;
+        console.log('Using answerIndex field:', correctValue);
+      } else if ('answerIdx' in selectedQuestion && (selectedQuestion as any).answerIdx !== undefined) {
+        correctValue = (selectedQuestion as any).answerIdx;
+        console.log('Using answerIdx field:', correctValue);
+      }
     }
+    
+    console.log('Final correctValue:', correctValue);
     
     const correctAnswersArray: number[] = Array.isArray(correctValue)
       ? correctValue.map((c: any) => Number(c))
-      : [Number(correctValue ?? 0)];
+      : correctValue !== undefined && correctValue !== null 
+        ? [Number(correctValue)]
+        : [0];
 
     console.log('Breakdown handleSubmit - correctAnswersArray before normalization:', correctAnswersArray);
+    console.log('Breakdown handleSubmit - correctAnswersArray type:', typeof correctAnswersArray, 'isArray:', Array.isArray(correctAnswersArray));
+    console.log('Breakdown handleSubmit - correctAnswersArray[0]:', correctAnswersArray[0]);
 
     if (selectedQuestion.type === 'MCQ') {
       // Single correct
       if (selectedOptions.length === 0) return;
       const chosen = selectedOptions[0];
-      const correctAnswer = correctAnswersArray[0];
-      
-      // Check if answer is correct (handle both 0-based and 1-based indexing)
-      const isCorrect = correctAnswer === chosen || correctAnswer === chosen + 1;
+
+      // Determine the correct index robustly across data shapes
+      let correctAnswer: number | undefined = undefined;
+      if (typeof selectedQuestion.answerIndex === 'number') {
+        correctAnswer = Number(selectedQuestion.answerIndex);
+        console.log('Breakdown MCQ - using selectedQuestion.answerIndex:', correctAnswer);
+      } else if (Array.isArray(selectedQuestion.correct) && selectedQuestion.correct.length > 0) {
+        correctAnswer = Number(selectedQuestion.correct[0]);
+        console.log('Breakdown MCQ - using selectedQuestion.correct[0]:', correctAnswer);
+      } else if (typeof (selectedQuestion as any).answerIdx === 'number') {
+        correctAnswer = Number((selectedQuestion as any).answerIdx);
+        console.log('Breakdown MCQ - using selectedQuestion.answerIdx:', correctAnswer);
+      } else if (Array.isArray(correctAnswersArray) && correctAnswersArray.length > 0) {
+        correctAnswer = Number(correctAnswersArray[0]);
+        console.log('Breakdown MCQ - using correctAnswersArray[0]:', correctAnswer);
+      }
+
+      console.log('Breakdown MCQ - correctAnswersArray:', correctAnswersArray);
+      console.log('Breakdown MCQ - resolved correctAnswer:', correctAnswer);
+
+      // Guard if still undefined
+      if (correctAnswer === undefined || Number.isNaN(correctAnswer)) {
+        console.warn('Breakdown MCQ - correctAnswer is undefined; defaulting to 0');
+        correctAnswer = 0;
+      }
+
+      // Check if answer is correct (correctAnswer is 0-based)
+      const isCorrect = correctAnswer === chosen;
       
       console.log('Breakdown MCQ - chosen:', chosen, 'correctAnswer:', correctAnswer, 'isCorrect:', isCorrect);
+      console.log('Breakdown MCQ - selectedQuestion:', selectedQuestion);
       
       const newStates = Array(selectedQuestion.options?.length || 4).fill('neutral') as OptionState[];
       newStates[chosen] = isCorrect ? 'green' : 'red';
       
       // If incorrect, also mark the correct option green
-      if (!isCorrect) {
-        // If correct answer is 1-based, convert to 0-based for display
-        const correctIndex = correctAnswer > 0 && correctAnswer <= (selectedQuestion.options?.length || 4) 
-          ? correctAnswer - 1 
-          : correctAnswer;
-        if (correctIndex >= 0 && correctIndex < newStates.length) {
-          newStates[correctIndex] = 'green';
-        }
+      if (!isCorrect && correctAnswer >= 0 && correctAnswer < newStates.length) {
+        newStates[correctAnswer] = 'green';
       }
       
       setOptionStates(newStates);
@@ -429,7 +463,7 @@ export const Breakdowns: React.FC = () => {
               )}
             </div>
 
-            {selectedQuestion.options && (
+            {selectedQuestion.options && selectedQuestion.type !== 'Numerical' && (
               <>
                 <div className="space-y-3 mb-6">
                   {selectedQuestion.options.map((option, index) => (
