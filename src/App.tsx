@@ -21,7 +21,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <div className="min-h-screen bg-gray-50">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
