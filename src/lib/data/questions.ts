@@ -26,6 +26,9 @@ export interface PracticeQuestion {
   // Optional range for numerical questions
   rangeMin?: number;
   rangeMax?: number;
+  // Additional fields that might come from Firestore
+  answerIndex?: number;
+  answerIndices?: number[];
 }
 
 export interface FirebaseBreakdownQuestion {
@@ -43,6 +46,9 @@ export interface FirebaseBreakdownQuestion {
   // Optional range for numerical questions
   rangeMin?: number;
   rangeMax?: number;
+  // Additional fields that might come from Firestore
+  answerIndex?: number;
+  answerIndices?: number[];
 }
 
 export interface Chapter {
@@ -231,7 +237,10 @@ export async function getBreakdownQuestionsByChapter(chapterId: string): Promise
     // Convert documents to question objects
     const allQuestions: FirebaseBreakdownQuestion[] = querySnapshot.docs.map((doc) => {
       const data = doc.data();
-      return validateQuestionData(data, doc.id, chapterId) as FirebaseBreakdownQuestion;
+      console.log(`Raw data for ${doc.id}:`, data);
+      const validated = validateQuestionData(data, doc.id, chapterId) as FirebaseBreakdownQuestion;
+      console.log(`Validated data for ${doc.id}:`, validated);
+      return validated;
     });
 
     console.log(`Successfully fetched ${allQuestions.length} breakdown questions for ${chapterId}`);
@@ -445,13 +454,15 @@ function validateQuestionData(data: any, docId: string, chapterId: string) {
   let normalizedCorrect: number | number[] = 0;
   
   // Check all possible field names for the correct answer
-  if (Array.isArray(data.answerIndices)) {
+  // IMPORTANT: Some single-answer docs include an empty answerIndices: [] alongside answerIndex: number
+  // In that case we must ignore the empty array and use answerIndex
+  if (Array.isArray(data.answerIndices) && data.answerIndices.length > 0) {
     // Multiple answers stored as answerIndices (for multiple answer questions)
     normalizedCorrect = data.answerIndices.map((c: any) => Number(c));
   } else if (data.answerIndex !== undefined) {
     // Single answer stored as answerIndex (most common for single MCQ breakdown questions)
     normalizedCorrect = Number(data.answerIndex);
-  } else if (Array.isArray(data.correct)) {
+  } else if (Array.isArray(data.correct) && data.correct.length > 0) {
     normalizedCorrect = data.correct.map((c: any) => Number(c));
   } else if (data.answerIdx !== undefined) {
     normalizedCorrect = Number(data.answerIdx);
@@ -473,7 +484,7 @@ function validateQuestionData(data: any, docId: string, chapterId: string) {
     derivedType = 'MCQ';
   }
 
-  return {
+  const result: any = {
     id: data.id || docId,
     title: data.title || data.questionText || data.description || 'Untitled Question',
     text: data.text || data.questionText || data.description || data.stem || '',
@@ -491,6 +502,19 @@ function validateQuestionData(data: any, docId: string, chapterId: string) {
     rangeMin: (data.range && (data.range.min ?? data.rangeMin ?? data.min)) ?? undefined,
     rangeMax: (data.range && (data.range.max ?? data.rangeMax ?? data.max)) ?? undefined,
   };
+  
+  // Preserve the original answerIndex and answerIndices fields if they exist
+  if (data.answerIndex !== undefined) {
+    result.answerIndex = data.answerIndex;
+  }
+  if (data.answerIndices !== undefined) {
+    result.answerIndices = data.answerIndices;
+  }
+  
+  console.log('validateQuestionData - normalized result:', result);
+  console.log('validateQuestionData - result.correct:', result.correct);
+  
+  return result;
 }
 
 /**

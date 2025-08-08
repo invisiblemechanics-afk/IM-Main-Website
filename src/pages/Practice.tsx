@@ -264,8 +264,8 @@ export const Practice: React.FC = () => {
     // Normalize correct answers to numbers
     // Also check for 'answerIndex' field as a fallback
     let correctValue = selectedQuestion.correct;
-    if ((correctValue === undefined || correctValue === null) && 'answerIndex' in selectedQuestion) {
-      correctValue = (selectedQuestion as any).answerIndex;
+    if ((correctValue === undefined || correctValue === null) && selectedQuestion.answerIndex !== undefined) {
+      correctValue = selectedQuestion.answerIndex;
       console.log('Practice - Using answerIndex field:', correctValue);
     }
     
@@ -281,23 +281,18 @@ export const Practice: React.FC = () => {
       const chosen = selectedOptions[0];
       const correctAnswer = correctAnswersArray[0];
       
-      // Check if answer is correct (handle both 0-based and 1-based indexing)
-      const isCorrect = correctAnswer === chosen || correctAnswer === chosen + 1;
+      // Check if answer is correct
+      // The correctAnswer should already be 0-based from validateQuestionData
+      const isCorrect = correctAnswer === chosen;
       
       console.log('Practice MCQ - chosen:', chosen, 'correctAnswer:', correctAnswer, 'isCorrect:', isCorrect);
       
       const newStates = Array(selectedQuestion.options?.length || 4).fill('neutral') as OptionState[];
       newStates[chosen] = isCorrect ? 'green' : 'red';
       
-      // If incorrect, also mark the correct option green
-      if (!isCorrect) {
-        // If correct answer is 1-based, convert to 0-based for display
-        const correctIndex = correctAnswer > 0 && correctAnswer <= (selectedQuestion.options?.length || 4) 
-          ? correctAnswer - 1 
-          : correctAnswer;
-        if (correctIndex >= 0 && correctIndex < newStates.length) {
-          newStates[correctIndex] = 'green';
-        }
+            // If incorrect, also mark the correct option green
+      if (!isCorrect && correctAnswer >= 0 && correctAnswer < newStates.length) {
+        newStates[correctAnswer] = 'green';
       }
       
       setOptionStates(newStates);
@@ -409,7 +404,7 @@ export const Practice: React.FC = () => {
               )}
             </div>
 
-            {selectedQuestion.options && (
+            {selectedQuestion.options && selectedQuestion.type !== 'Numerical' && (
               <>
                 <div className="space-y-3 mb-6">
                   {selectedQuestion.options.map((option, index) => (
@@ -463,6 +458,7 @@ export const Practice: React.FC = () => {
                 <div className="flex gap-4 flex-wrap">
                   <button
                     onClick={handleSubmit}
+                    disabled={!numericValue.trim() || isSubmitted}
                     className={styles.submitButton}
                   >
                     Submit
