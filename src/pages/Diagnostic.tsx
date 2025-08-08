@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom';
 import { getRandomDiagnosticQuestions, DiagnosticQuestion, getAllChapters, Chapter } from '../lib/data/questions';
 import { getAllTopicsWithURLs } from '../lib/data/topics';
 import { CircularCheckbox } from '../components/CircularCheckbox';
+import { OptionState } from '../components/breakdowns/types';
 
 type Answer = {
   questionId: string;
@@ -31,9 +32,11 @@ export const Diagnostic: React.FC = () => {
   const [selectedChoice, setSelectedChoice] = React.useState<number | null>(null);
   const [view, setView] = React.useState<View>('chapterSelection');
   const [showFeedback, setShowFeedback] = React.useState(false);
+  const [optionStates, setOptionStates] = React.useState<OptionState[]>([]);
+  const [isSubmitted, setIsSubmitted] = React.useState(false);
 
   useEffect(() => {
-    document.title = 'Diagnostic Test - AuthFlow';
+    document.title = 'Diagnostic Test - Invisible Mechanics';
   }, []);
 
   // Load chapters when component mounts
@@ -103,6 +106,10 @@ export const Diagnostic: React.FC = () => {
       return;
     }
     setView('question');
+    // Initialize option states for first question
+    if (questions[0]) {
+      setOptionStates(Array(questions[0].choices.length).fill('neutral'));
+    }
   };
 
   const handleSubmit = () => {
@@ -117,6 +124,16 @@ export const Diagnostic: React.FC = () => {
       topicId: currentQuestion.topicId
     };
 
+    // Apply color-coded feedback
+    const newStates = Array(currentQuestion.choices.length).fill('neutral') as OptionState[];
+    newStates[selectedChoice] = isCorrect ? 'green' : 'red';
+    // Show the correct answer in green if user was wrong
+    if (!isCorrect) {
+      newStates[currentQuestion.answerIdx] = 'green';
+    }
+    setOptionStates(newStates);
+    setIsSubmitted(true);
+
     setAnswers(prev => [...prev, newAnswer]);
     setShowFeedback(true);
     setView('feedback');
@@ -125,12 +142,17 @@ export const Diagnostic: React.FC = () => {
   const handleNext = () => {
     setSelectedChoice(null);
     setShowFeedback(false);
+    setIsSubmitted(false);
     
     if (currentIdx + 1 >= questions.length) {
       setView('results');
     } else {
       setCurrentIdx(prev => prev + 1);
       setView('question');
+      // Reset option states for new question
+      if (questions[currentIdx + 1]) {
+        setOptionStates(Array(questions[currentIdx + 1].choices.length).fill('neutral'));
+      }
     }
   };
 
@@ -367,37 +389,58 @@ export const Diagnostic: React.FC = () => {
               </h2>
 
               <div className="space-y-3">
-                {currentQuestion.choices.map((choice, index) => (
-                  <label
-                    key={index}
-                    className={`
-                      flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
-                      ${selectedChoice === index
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                {currentQuestion.choices.map((choice, index) => {
+                  const state = optionStates[index] || 'neutral';
+                  const getColorClasses = () => {
+                    if (isSubmitted) {
+                      switch (state) {
+                        case 'green':
+                          return 'border-green-500 bg-green-50';
+                        case 'red':
+                          return 'border-red-500 bg-red-50';
+                        case 'yellow':
+                          return 'border-yellow-500 bg-yellow-50';
+                        case 'purple':
+                          return 'border-purple-500 bg-purple-50';
+                        default:
+                          return 'border-gray-200 bg-white';
                       }
-                    `}
-                    onClick={() => setSelectedChoice(index)}
-                  >
-                    <CircularCheckbox
-                      checked={selectedChoice === index}
-                      onChange={() => setSelectedChoice(index)}
-                    />
-                    <span className="ml-3 text-gray-900">
-                      {choice}
-                    </span>
-                  </label>
-                ))}
+                    }
+                    return selectedChoice === index
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-gray-300';
+                  };
+
+                  return (
+                    <label
+                      key={index}
+                      className={`
+                        flex items-center p-4 rounded-lg border-2 transition-all duration-200
+                        ${getColorClasses()}
+                        ${isSubmitted ? 'cursor-default' : 'cursor-pointer'}
+                      `}
+                      onClick={() => !isSubmitted && setSelectedChoice(index)}
+                    >
+                      <CircularCheckbox
+                        checked={selectedChoice === index}
+                        onChange={() => !isSubmitted && setSelectedChoice(index)}
+                      />
+                      <span className="ml-3 text-gray-900">
+                        {choice}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={selectedChoice === null}
+              disabled={selectedChoice === null || isSubmitted}
               className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
             >
-              Submit Answer
+              {isSubmitted ? 'Answer Submitted' : 'Submit Answer'}
             </button>
           </div>
         )}

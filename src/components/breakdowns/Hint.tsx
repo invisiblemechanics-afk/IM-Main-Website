@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './breakdowns.module.css';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { LaTeXRenderer } from '../LaTeXRenderer';
 
 interface HintProps {
   text: string;
@@ -18,7 +19,7 @@ export const Hint: React.FC<HintProps> = ({ text, onClose }) => {
         <XMarkIcon className="w-5 h-5" />
       </button>
       <h4 className="font-semibold mb-2">Hint</h4>
-      <p>{text}</p>
+      <p><LaTeXRenderer>{text}</LaTeXRenderer></p>
     </div>
   );
 };

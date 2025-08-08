@@ -23,6 +23,9 @@ export interface NumericSlide {
   title: string;
   question: string;
   answer: number | number[];
+  // Optional inclusive range for validation
+  rangeMin?: number;
+  rangeMax?: number;
   hint?: string;
   img?: string;
 }

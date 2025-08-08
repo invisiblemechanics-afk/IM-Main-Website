@@ -9,6 +9,7 @@ import { Diagnostic } from './pages/Diagnostic';
 import { ManualBuilder } from './pages/ManualBuilder';
 import { Course } from './pages/Course';
 import { Breakdowns } from './pages/Breakdowns';
+import { Practice } from './pages/Practice';
 
 function App() {
   // Initialize clean white theme
@@ -63,6 +64,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Breakdowns />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/practice" 
+              element={
+                <ProtectedRoute>
+                  <Practice />
                 </ProtectedRoute>
               } 
             />

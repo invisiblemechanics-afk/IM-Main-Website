@@ -27,9 +27,9 @@ export const FirebaseImage: React.FC<FirebaseImageProps> = ({ imagePath, alt, cl
         setLoading(true);
         setError(null);
         
-        // If it's the demo image, use the direct URL
-        if (imagePath === 'breakdowns-sample-image.png') {
-          setImageUrl(DEMO_IMAGE_URL);
+        // If it's already a full URL (starts with http), use it directly
+        if (imagePath.startsWith('http')) {
+          setImageUrl(imagePath);
           setLoading(false);
           return;
         }
@@ -43,7 +43,6 @@ export const FirebaseImage: React.FC<FirebaseImageProps> = ({ imagePath, alt, cl
       } catch (err) {
         console.error(`Failed to load image: ${imagePath}`, err);
         // Fallback to demo image if loading fails
-        console.log('Falling back to demo image...');
         setImageUrl(DEMO_IMAGE_URL);
         setLoading(false);
         setError(null); // Clear error since we have fallback

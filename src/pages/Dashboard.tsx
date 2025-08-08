@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/Logo';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { BreakdownCard } from '../components/breakdowns/BreakdownCard';
+import { PracticeCard } from '../components/breakdowns/PracticeCard';
 import { ChartBarIcon, Squares2X2Icon, PlayCircleIcon, TrashIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { getFirestore, collection, doc, onSnapshot, orderBy, query, Timestamp, deleteDoc } from 'firebase/firestore';
 import { getAllTopicsWithURLs } from '../lib/data/topics';
@@ -32,7 +33,7 @@ export const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    document.title = 'Dashboard - AuthFlow';
+    document.title = 'Dashboard - Invisible Mechanics';
   }, []);
 
   // Subscribe to user's playlists
@@ -195,7 +196,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Action Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
           {/* Diagnostic Card */}
           <Link
             to="/diagnostic"
@@ -244,6 +245,9 @@ export const Dashboard: React.FC = () => {
 
           {/* Breakdowns Card */}
           <BreakdownCard />
+
+          {/* Practice Card */}
+          <PracticeCard />
         </div>
 
         {/* Recent Playlists Section */}

@@ -5,17 +5,39 @@ import { Slide, SlideAnswer, OptionState } from './types';
 import { TheorySlide } from './TheorySlide';
 import { QuestionSlide } from './QuestionSlide';
 import { useSlideNav } from './useSlideNav';
+import { LaTeXRenderer } from '../LaTeXRenderer';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { slides } from './slides';
 
 interface SlideDeckProps {
+  slides: Slide[];
   onBackToQuestion?: () => void;
 }
 
-export const SlideDeck: React.FC<SlideDeckProps> = ({ onBackToQuestion }) => {
+export const SlideDeck: React.FC<SlideDeckProps> = ({ slides, onBackToQuestion }) => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<SlideAnswer[]>([]);
+
+  // Handle empty slides array
+  if (!slides || slides.length === 0) {
+    return (
+      <div className={styles.slideContainer}>
+        <div className={styles.slideHeader}>
+          <button
+            onClick={() => onBackToQuestion ? onBackToQuestion() : navigate(-1)}
+            className={styles.backButton}
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+            Main Problem
+          </button>
+          <h2 className={styles.slideTitle}>No Slides Available</h2>
+        </div>
+        <div className="text-center py-12 text-gray-500">
+          <p>No slides are available for this question yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentSlide = slides[currentIndex];
   const savedAnswer = answers.find(a => a.slideId === currentSlide.id);
@@ -65,22 +87,26 @@ export const SlideDeck: React.FC<SlideDeckProps> = ({ onBackToQuestion }) => {
           <ChevronLeftIcon className="w-5 h-5" />
           Main Problem
         </button>
-        <h2 className={styles.slideTitle}>{currentSlide.title}</h2>
+        <h2 className={styles.slideTitle}>
+          <LaTeXRenderer>{currentSlide.title}</LaTeXRenderer>
+        </h2>
         <div className={styles.progressIndicator}>
           Page {currentIndex + 1} / {slides.length}
         </div>
       </div>
 
-      {currentSlide.type === 'theory' ? (
-        <TheorySlide slide={currentSlide} />
-      ) : (
-        <QuestionSlide
-          slide={currentSlide}
-          savedAnswer={savedAnswer?.chosen}
-          savedState={savedAnswer?.state}
-          onSubmit={handleQuestionSubmit}
-        />
-      )}
+      <div className={styles.slideContent}>
+        {currentSlide.type === 'theory' ? (
+          <TheorySlide slide={currentSlide} />
+        ) : (
+          <QuestionSlide
+            slide={currentSlide}
+            savedAnswer={savedAnswer?.chosen}
+            savedState={savedAnswer?.state}
+            onSubmit={handleQuestionSubmit}
+          />
+        )}
+      </div>
 
       <div className={styles.navigation}>
         <button

@@ -2,6 +2,7 @@ import React from 'react';
 import styles from './breakdowns.module.css';
 import { TheorySlide as TheorySlideType } from './types';
 import { FirebaseImage } from './FirebaseImage';
+import { LaTeXBlockRenderer } from '../LaTeXRenderer';
 
 interface TheorySlideProps {
   slide: TheorySlideType;
@@ -9,20 +10,19 @@ interface TheorySlideProps {
 
 export const TheorySlide: React.FC<TheorySlideProps> = ({ slide }) => {
   return (
-    <div className={styles.slideContent}>
-      <div 
-        className={styles.theoryText}
-        dangerouslySetInnerHTML={{ __html: slide.html }}
-      />
+    <>
+      <div className={styles.theoryText}>
+        <LaTeXBlockRenderer>{slide.html}</LaTeXBlockRenderer>
+      </div>
       {slide.img && (
         <div className={styles.imageContainer}>
           <FirebaseImage 
-            imagePath="breakdowns-sample-image.png"
+            imagePath={slide.img}
             alt={slide.title}
             className={styles.slideImage}
           />
         </div>
       )}
-    </div>
+    </>
   );
 };

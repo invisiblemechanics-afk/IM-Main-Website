@@ -4,35 +4,60 @@ export function evaluateSingle(correct: number, chosen: number): OptionState {
   return correct === chosen ? 'green' : 'red';
 }
 
-export function evaluateMulti(correct: number[], chosen: number[]): OptionState[] {
+/**
+ * If indices appear to be 1-based (no zero and all within 1..optionsLength), convert them to 0-based.
+ * Otherwise, return as-is.
+ */
+export function normalizeIndicesIfOneBased(indices: number[], optionsLength: number): number[] {
+  if (!indices || indices.length === 0) return indices ?? [];
+  const hasZero = indices.includes(0);
+  const min = Math.min(...indices);
+  const max = Math.max(...indices);
+  const looksOneBased = !hasZero && min >= 1 && max <= optionsLength;
+  return looksOneBased ? indices.map((i) => i - 1) : indices;
+}
+
+export function evaluateMulti(correct: number[], chosen: number[], optionsCount: number = 4): OptionState[] {
   const correctSet = new Set(correct);
   const chosenSet = new Set(chosen);
-  
-  // Check if any wrong option was selected
+
+  // Any wrong option → all chosen red
   const hasWrongChoice = chosen.some(c => !correctSet.has(c));
   if (hasWrongChoice) {
-    // All chosen options are red
-    return Array.from({ length: 4 }, (_, i) => chosen.includes(i) ? 'red' : 'neutral');
+    // Requirement: if any wrong is chosen, turn ALL options red
+    return Array.from({ length: optionsCount }, () => 'red');
   }
-  
-  // Check if all correct options were selected
+
+  // All correct chosen and counts match → all correct green
   const allCorrectSelected = correct.every(c => chosenSet.has(c));
   if (allCorrectSelected && chosen.length === correct.length) {
-    // All correct options are green
-    return Array.from({ length: 4 }, (_, i) => correct.includes(i) ? 'green' : 'neutral');
+    return Array.from({ length: optionsCount }, (_, i) => correct.includes(i) ? 'green' : 'neutral');
   }
-  
-  // Some but not all correct options selected (yellow)
-  return Array.from({ length: 4 }, (_, i) => {
+
+  // Partial correct (no wrongs) → chosen correct yellow; others neutral
+  return Array.from({ length: optionsCount }, (_, i) => {
     if (correct.includes(i) && chosen.includes(i)) return 'yellow';
-    if (!correct.includes(i) && chosen.includes(i)) return 'red';
     return 'neutral';
   });
 }
 
-export function evaluateNumeric(correct: number | number[], value: number | number[]): OptionState {
+export function evaluateNumeric(
+  correct: number | number[] | undefined,
+  value: number | number[] | undefined,
+  inclusiveRange?: { min?: number; max?: number }
+): OptionState {
+  // Prefer range validation when provided
+  if (inclusiveRange && typeof value === 'number') {
+    const { min, max } = inclusiveRange;
+    if (min !== undefined && value < min) return 'red';
+    if (max !== undefined && value > max) return 'red';
+    return 'green';
+  }
+
+  if (correct === undefined || value === undefined) return 'red';
+
   if (Array.isArray(correct) && Array.isArray(value)) {
-    return correct.every((c, i) => Math.abs(c - value[i]) < 0.01) ? 'green' : 'red';
+    return correct.every((c, i) => Math.abs(c - (value[i] ?? NaN)) < 0.01) ? 'green' : 'red';
   }
   if (!Array.isArray(correct) && !Array.isArray(value)) {
     return Math.abs(correct - value) < 0.01 ? 'green' : 'red';

@@ -20,7 +20,7 @@ async function seedChapters() {
     console.log('Seeding chapters...');
     for (const chapter of chapters) {
         try {
-            await db.collection('chapters').doc(chapter.id).set({
+            await db.collection('Chapters').doc(chapter.id).set({
                 name: chapter.name,
                 slug: chapter.id,
                 questionCount: chapter.questionCount,

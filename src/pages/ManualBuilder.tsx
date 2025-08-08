@@ -56,8 +56,9 @@ export const ManualBuilder: React.FC = () => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [chapterTopics, setChapterTopics] = useState<Record<string, TopicWithURL[]>>({});
+  const [loadingChapters, setLoadingChapters] = useState<Set<string>>(new Set());
   useEffect(() => {
-    document.title = 'Build Course Manually - AuthFlow';
+    document.title = 'Build Course Manually - Invisible Mechanics';
   }, []);
 
   // Fetch all chapters and topics
@@ -172,11 +173,26 @@ export const ManualBuilder: React.FC = () => {
     if (isExpanding && !chapterTopics[chapterId]) {
       try {
         console.log(`Loading topics for chapter: ${chapterId}`);
+        // Add to loading set
+        setLoadingChapters(prev => new Set(prev).add(chapterId));
+        
         const topicsData = await getAllTopicsWithURLs(chapterId);
         setChapterTopics(prev => ({ ...prev, [chapterId]: topicsData }));
+        
+        // Remove from loading set
+        setLoadingChapters(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chapterId);
+          return newSet;
+        });
       } catch (error) {
         console.error(`Error loading topics for chapter ${chapterId}:`, error);
-        // Revert expansion if loading failed
+        // Remove from loading set and revert expansion if loading failed
+        setLoadingChapters(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chapterId);
+          return newSet;
+        });
         setExpanded(e => ({ ...e, [chapterId]: false }));
       }
     }
@@ -279,6 +295,8 @@ export const ManualBuilder: React.FC = () => {
                     .filter(chapter => {
                       if (!searchTerm) return true;
                       const topicsInChapter = chapterTopics[chapter.id] || [];
+                      // If no topics loaded yet, show the chapter (will load when expanded)
+                      if (topicsInChapter.length === 0) return true;
                       return topicsInChapter.some(topic =>
                         topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         topic.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -293,7 +311,8 @@ export const ManualBuilder: React.FC = () => {
                           )
                         : topicsInChapter;
 
-                      if (filteredChapterTopics.length === 0) return null;
+                      // Only hide chapters if they have loaded topics but none match the search
+                      if (searchTerm && topicsInChapter.length > 0 && filteredChapterTopics.length === 0) return null;
 
                       return (
                         <div key={chapter.id} className="mb-6">
@@ -308,7 +327,12 @@ export const ManualBuilder: React.FC = () => {
                               </h2>
                               <div className="flex items-center space-x-2">
                                 <span className="text-sm text-primary-600">
-                                  {filteredChapterTopics.length} topic{filteredChapterTopics.length !== 1 ? 's' : ''}
+                                  {loadingChapters.has(chapter.id)
+                                    ? 'Loading...'
+                                    : topicsInChapter.length > 0 
+                                      ? `${filteredChapterTopics.length} topic${filteredChapterTopics.length !== 1 ? 's' : ''}`
+                                      : 'Click to load topics'
+                                  }
                                 </span>
                                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 hover:bg-primary-200 transition-colors">
                                   {expanded[chapter.id] ? (
@@ -324,7 +348,17 @@ export const ManualBuilder: React.FC = () => {
                           {/* Topics in Chapter */}
                           {expanded[chapter.id] && (
                             <div className="space-y-2 ml-4">
-                              {filteredChapterTopics.map((topic) => (
+                              {loadingChapters.has(chapter.id) ? (
+                                <div className="flex items-center justify-center py-4">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-2"></div>
+                                  <span className="text-sm text-gray-500">Loading topics...</span>
+                                </div>
+                              ) : filteredChapterTopics.length === 0 ? (
+                                <div className="text-center py-4">
+                                  <span className="text-sm text-gray-500">No topics found in this chapter</span>
+                                </div>
+                              ) : (
+                                filteredChapterTopics.map((topic) => (
                                 <div
                                   key={topic.id}
                                   className="bg-gray-50 p-3 rounded-lg flex items-center hover:bg-gray-100 transition-colors"
@@ -354,7 +388,8 @@ export const ManualBuilder: React.FC = () => {
                                     />
                                   </div>
                                 </div>
-                              ))}
+                                ))
+                              )}
                             </div>
                           )}
                         </div>

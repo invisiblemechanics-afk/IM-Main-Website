@@ -9,18 +9,17 @@ import { SlideDeck } from '../components/breakdowns/SlideDeck';
 import { OptionBlock } from '../components/breakdowns/OptionBlock';
 import { FirebaseImage } from '../components/breakdowns/FirebaseImage';
 import { evaluateMulti, evaluateNumeric } from '../components/breakdowns/utils';
-import { OptionState } from '../components/breakdowns/types';
+import { OptionState, Slide } from '../components/breakdowns/types';
 import { LaTeXRenderer } from '../components/LaTeXRenderer';
 import { 
-  getBreakdownQuestionsByChapter, 
-  getFirebaseBreakdownQuestionById, 
-  getSlidesByQuestionId,
-  FirebaseBreakdownQuestion 
+  getPracticeQuestionsByChapter, 
+  getPracticeQuestionById, 
+  getAnswerSlidesByQuestionId,
+  PracticeQuestion 
 } from '../lib/data/questions';
-import { Slide } from '../components/breakdowns/types';
 import styles from '../components/breakdowns/breakdowns.module.css';
 
-type ViewMode = 'list' | 'question' | 'slides';
+type ViewMode = 'list' | 'question' | 'answer-slides';
 type QuestionType = 'MCQ' | 'Multiple Answer' | 'Numerical';
 type AttemptStatus = 'Not Attempted' | 'Correct Answer' | 'Wrong Answer';
 type ExamType = 'JEE Main' | 'JEE Advanced' | 'NEET';
@@ -36,15 +35,15 @@ interface FirebaseChapter {
   section?: string;
 }
 
-export const Breakdowns: React.FC = () => {
+export const Practice: React.FC = () => {
   const { user, loading } = useAuth();
   const [selectedChapter, setSelectedChapter] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   useEffect(() => {
-    document.title = 'Breakdowns - Invisible Mechanics';
+    document.title = 'Practice Problems - Invisible Mechanics';
   }, []);
-  const [selectedQuestion, setSelectedQuestion] = useState<FirebaseBreakdownQuestion | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<PracticeQuestion | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [optionStates, setOptionStates] = useState<OptionState[]>([]);
@@ -55,13 +54,13 @@ export const Breakdowns: React.FC = () => {
   const [chaptersLoading, setChaptersLoading] = useState(true);
   const [chaptersError, setChaptersError] = useState<string | null>(null);
   
-  // Firebase breakdown questions state
-  const [breakdownQuestions, setBreakdownQuestions] = useState<FirebaseBreakdownQuestion[]>([]);
+  // Practice questions state
+  const [practiceQuestions, setPracticeQuestions] = useState<PracticeQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   
-  // Slides state for SlideDeck
-  const [currentSlides, setCurrentSlides] = useState<Slide[]>([]);
-  const [slidesLoading, setSlidesLoading] = useState(false);
+  // Answer slides state for SlideDeck
+  const [currentAnswerSlides, setCurrentAnswerSlides] = useState<Slide[]>([]);
+  const [answerSlidesLoading, setAnswerSlidesLoading] = useState(false);
   
   // Filter states
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<Set<QuestionType>>(new Set(['MCQ', 'Multiple Answer', 'Numerical']));
@@ -74,7 +73,7 @@ export const Breakdowns: React.FC = () => {
       try {
         setChaptersLoading(true);
         setChaptersError(null);
-        console.log('Loading chapters from Firebase for Breakdowns page...');
+        console.log('Loading chapters from Firebase for Practice page...');
         
         const chapters = await getAllChapters();
         console.log('Loaded chapters:', chapters);
@@ -96,31 +95,31 @@ export const Breakdowns: React.FC = () => {
     loadChapters();
   }, []);
 
-  // Load breakdown questions when selected chapter changes
+  // Load practice questions when selected chapter changes
   useEffect(() => {
-    const loadBreakdownQuestions = async () => {
+    const loadPracticeQuestions = async () => {
       if (!selectedChapter) {
-        setBreakdownQuestions([]);
+        setPracticeQuestions([]);
         return;
       }
 
       try {
         setQuestionsLoading(true);
-        console.log('Loading breakdown questions for chapter:', selectedChapter);
+        console.log('Loading practice questions for chapter:', selectedChapter);
         
-        const questions = await getBreakdownQuestionsByChapter(selectedChapter);
-        console.log('Loaded breakdown questions:', questions);
+        const questions = await getPracticeQuestionsByChapter(selectedChapter);
+        console.log('Loaded practice questions:', questions);
         
-        setBreakdownQuestions(questions);
+        setPracticeQuestions(questions);
       } catch (error) {
-        console.error('Error loading breakdown questions:', error);
-        setBreakdownQuestions([]);
+        console.error('Error loading practice questions:', error);
+        setPracticeQuestions([]);
       } finally {
         setQuestionsLoading(false);
       }
     };
 
-    loadBreakdownQuestions();
+    loadPracticeQuestions();
   }, [selectedChapter]);
 
   if (loading) {
@@ -137,13 +136,13 @@ export const Breakdowns: React.FC = () => {
 
   // Filter questions based on selected filters
   const filteredQuestions = useMemo(() => {
-    return breakdownQuestions.filter(question => {
+    return practiceQuestions.filter(question => {
       const typeMatch = selectedQuestionTypes.has(question.type);
       const statusMatch = selectedAttemptStatuses.has(question.status);
       const examMatch = selectedExamTypes.has(question.exam);
       return typeMatch && statusMatch && examMatch;
     });
-  }, [breakdownQuestions, selectedQuestionTypes, selectedAttemptStatuses, selectedExamTypes]);
+  }, [practiceQuestions, selectedQuestionTypes, selectedAttemptStatuses, selectedExamTypes]);
 
   // Filter handlers
   const handleQuestionTypeToggle = (type: QuestionType) => {
@@ -187,11 +186,12 @@ export const Breakdowns: React.FC = () => {
     setSelectedOptions([]);
     setIsSubmitted(false);
     setOptionStates([]);
+    setCurrentAnswerSlides([]);
   };
 
   const handleQuestionClick = async (questionId: string) => {
     try {
-      const question = await getFirebaseBreakdownQuestionById(questionId, selectedChapter);
+      const question = await getPracticeQuestionById(questionId, selectedChapter);
       if (question) {
         setSelectedQuestion(question);
         setViewMode('question');
@@ -205,7 +205,32 @@ export const Breakdowns: React.FC = () => {
       }
       }
     } catch (error) {
-      console.error('Error loading breakdown question:', error);
+      console.error('Error loading question:', error);
+    }
+  };
+
+  const handleCheckAnswer = async () => {
+    console.log('Check Answer button clicked!');
+    console.log('Selected Question:', selectedQuestion);
+    console.log('Selected Chapter:', selectedChapter);
+    console.log('Question ID being used:', selectedQuestion?.id);
+    
+    if (!selectedQuestion || !selectedChapter) {
+      console.error('Missing selectedQuestion or selectedChapter');
+      return;
+    }
+    
+    try {
+      setAnswerSlidesLoading(true);
+      console.log('Calling getAnswerSlidesByQuestionId with:', selectedChapter, selectedQuestion.id);
+      const slides = await getAnswerSlidesByQuestionId(selectedChapter, selectedQuestion.id);
+      console.log('Received slides from function:', slides);
+      setCurrentAnswerSlides(slides);
+      setViewMode('answer-slides');
+    } catch (error) {
+      console.error('Error loading answer slides:', error);
+    } finally {
+      setAnswerSlidesLoading(false);
     }
   };
 
@@ -233,23 +258,22 @@ export const Breakdowns: React.FC = () => {
     if (!selectedQuestion) return;
 
     // Log for debugging
-    console.log('Breakdown handleSubmit - selectedQuestion.correct:', selectedQuestion.correct);
-    console.log('Breakdown handleSubmit - selectedQuestion:', selectedQuestion);
-    console.log('Breakdown handleSubmit - selectedOptions:', selectedOptions);
+    console.log('Practice handleSubmit - selectedQuestion.correct:', selectedQuestion.correct);
+    console.log('Practice handleSubmit - selectedOptions:', selectedOptions);
 
     // Normalize correct answers to numbers
-    // For breakdown questions, the answer might be stored as 'answerIndex' instead of 'correct'
+    // Also check for 'answerIndex' field as a fallback
     let correctValue = selectedQuestion.correct;
     if ((correctValue === undefined || correctValue === null) && 'answerIndex' in selectedQuestion) {
       correctValue = (selectedQuestion as any).answerIndex;
-      console.log('Using answerIndex field:', correctValue);
+      console.log('Practice - Using answerIndex field:', correctValue);
     }
     
     const correctAnswersArray: number[] = Array.isArray(correctValue)
       ? correctValue.map((c: any) => Number(c))
       : [Number(correctValue ?? 0)];
 
-    console.log('Breakdown handleSubmit - correctAnswersArray before normalization:', correctAnswersArray);
+    console.log('Practice handleSubmit - correctAnswersArray:', correctAnswersArray);
 
     if (selectedQuestion.type === 'MCQ') {
       // Single correct
@@ -260,7 +284,7 @@ export const Breakdowns: React.FC = () => {
       // Check if answer is correct (handle both 0-based and 1-based indexing)
       const isCorrect = correctAnswer === chosen || correctAnswer === chosen + 1;
       
-      console.log('Breakdown MCQ - chosen:', chosen, 'correctAnswer:', correctAnswer, 'isCorrect:', isCorrect);
+      console.log('Practice MCQ - chosen:', chosen, 'correctAnswer:', correctAnswer, 'isCorrect:', isCorrect);
       
       const newStates = Array(selectedQuestion.options?.length || 4).fill('neutral') as OptionState[];
       newStates[chosen] = isCorrect ? 'green' : 'red';
@@ -278,30 +302,26 @@ export const Breakdowns: React.FC = () => {
       
       setOptionStates(newStates);
     } else if (selectedQuestion.type === 'Multiple Answer') {
-      if (selectedOptions.length === 0) return;
-      
       // For multiple answer questions, check for answerIndices field
       let multiCorrectArray: number[] = [];
       if ('answerIndices' in selectedQuestion && (selectedQuestion as any).answerIndices) {
         multiCorrectArray = (selectedQuestion as any).answerIndices.map((v: any) => Number(v));
-        console.log('Using answerIndices field:', multiCorrectArray);
+        console.log('Practice - Using answerIndices field:', multiCorrectArray);
       } else if (correctAnswersArray.length > 0) {
         multiCorrectArray = correctAnswersArray;
-        console.log('Using correct field:', multiCorrectArray);
+        console.log('Practice - Using correct field:', multiCorrectArray);
       }
       
-      // Normalize correct indices if they appear to be 1-based (defensive)
-      const optionsLen = selectedQuestion.options?.length || 4;
-      const normalizedCorrect = ((): number[] => {
-        if (!multiCorrectArray || multiCorrectArray.length === 0) return [];
-        const hasZero = multiCorrectArray.includes(0);
-        const min = Math.min(...multiCorrectArray);
-        const max = Math.max(...multiCorrectArray);
-        const looksOneBased = !hasZero && min >= 1 && max <= optionsLen;
-        return looksOneBased ? multiCorrectArray.map(v => v - 1) : multiCorrectArray;
-      })();
-      console.log('Breakdown Multi - normalizedCorrect:', normalizedCorrect, 'selectedOptions:', selectedOptions);
-      const states = evaluateMulti(normalizedCorrect, selectedOptions, optionsLen);
+      // Multiple correct - normalize to 0-based if needed
+      const normalizedCorrect = multiCorrectArray.map((v) => {
+        // If value is 1-based (1 to options.length), convert to 0-based
+        if (v > 0 && v <= (selectedQuestion.options?.length || 4)) {
+          return v - 1;
+        }
+        return v;
+      });
+      console.log('Practice Multi - normalizedCorrect:', normalizedCorrect, 'selectedOptions:', selectedOptions);
+      const states = evaluateMulti(normalizedCorrect, selectedOptions, selectedQuestion.options?.length || 4);
       setOptionStates(states);
     } else if (selectedQuestion.type === 'Numerical') {
       // Numerical validation with range support
@@ -324,49 +344,15 @@ export const Breakdowns: React.FC = () => {
     setSelectedQuestion(null);
   };
 
-  const handleShowSlides = async () => {
-    if (!selectedQuestion || !selectedChapter) {
-      console.error('No question or chapter selected for slides');
-      return;
-    }
 
-    try {
-      setSlidesLoading(true);
-      console.log('Loading slides for question:', selectedQuestion.id);
-      
-      const slides = await getSlidesByQuestionId(selectedChapter, selectedQuestion.id);
-      console.log('Loaded slides:', slides);
-      
-      setCurrentSlides(slides);
-      setViewMode('slides');
-    } catch (error) {
-      console.error('Error loading slides:', error);
-      // Fallback to empty slides or show error message
-      setCurrentSlides([]);
-      setViewMode('slides');
-    } finally {
-      setSlidesLoading(false);
-    }
-  };
 
-  // Render slide deck view
-  if (viewMode === 'slides') {
-    if (slidesLoading) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading breakdown slides...</p>
-          </div>
-        </div>
-      );
-    }
-
+  // Render answer slides view
+  if (viewMode === 'answer-slides') {
     return (
       <div className={styles.container}>
         <SlideDeck 
-          slides={currentSlides}
-          onBackToQuestion={() => setViewMode('question')} 
+          slides={currentAnswerSlides}
+          onBackToQuestion={() => setViewMode('question')}
         />
       </div>
     );
@@ -405,15 +391,9 @@ export const Breakdowns: React.FC = () => {
                   <LaTeXRenderer>{selectedQuestion.title}</LaTeXRenderer>
                 </h1>
               </div>
-              <button
-                onClick={handleShowSlides}
-                className={styles.breakdownButton}
-              >
-                Break this down
-              </button>
             </div>
 
-                        <div className="mb-6">
+            <div className="mb-6">
               <p className="text-lg text-gray-700 mb-4">
                 <LaTeXRenderer>{selectedQuestion.text}</LaTeXRenderer>
               </p>
@@ -445,13 +425,23 @@ export const Breakdowns: React.FC = () => {
                   ))}
                 </div>
 
-                <button
-                  onClick={handleSubmit}
-                  disabled={selectedOptions.length === 0 || isSubmitted}
-                  className={styles.submitButton}
-                >
-                  Submit
-                </button>
+                <div className="flex gap-4 flex-wrap">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={selectedOptions.length === 0 || isSubmitted}
+                    className={styles.submitButton}
+                  >
+                    Submit
+                  </button>
+                  
+                  <button
+                    onClick={handleCheckAnswer}
+                    disabled={answerSlidesLoading}
+                    className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {answerSlidesLoading ? 'Loading...' : 'Check the Answer'}
+                  </button>
+                </div>
               </>
             )}
 
@@ -470,19 +460,21 @@ export const Breakdowns: React.FC = () => {
                   />
                 </div>
                 
-                <div className={styles.buttonContainer}>
-                  <div className={styles.submitSection}>
-                    <button
-                      onClick={handleSubmit}
-                      className={styles.submitButton}
-                    >
-                      Submit
-                    </button>
-                  </div>
+                <div className="flex gap-4 flex-wrap">
+                  <button
+                    onClick={handleSubmit}
+                    className={styles.submitButton}
+                  >
+                    Submit
+                  </button>
                   
-                  <div className={styles.hintSection}>
-                    {/* Hint button space for consistency, even if no hint */}
-                  </div>
+                  <button
+                    onClick={handleCheckAnswer}
+                    disabled={answerSlidesLoading}
+                    className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {answerSlidesLoading ? 'Loading...' : 'Check the Answer'}
+                  </button>
                 </div>
               </>
             )}
@@ -515,13 +507,13 @@ export const Breakdowns: React.FC = () => {
         <div className="flex gap-8">
           {/* Left Side - Question Cards */}
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Breakdowns</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">Practice Problems</h1>
             
             {/* Question Cards Grid */}
             {questionsLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading breakdown questions...</p>
+                <p className="text-gray-500">Loading practice questions...</p>
               </div>
             ) : (
               <>
@@ -535,22 +527,22 @@ export const Breakdowns: React.FC = () => {
                   ))}
                 </div>
 
-                {selectedChapter && filteredQuestions.length === 0 && breakdownQuestions.length > 0 && (
+                {selectedChapter && filteredQuestions.length === 0 && practiceQuestions.length > 0 && (
                   <div className="text-center py-12 text-gray-500">
                     <p>No questions match the selected filters.</p>
                     <p className="text-sm mt-2">Try adjusting your filter settings.</p>
                   </div>
                 )}
 
-                {selectedChapter && breakdownQuestions.length === 0 && (
+                {selectedChapter && practiceQuestions.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    <p>No breakdown questions available for this chapter yet.</p>
+                    <p>No practice questions available for this chapter yet.</p>
                   </div>
                 )}
 
                 {!selectedChapter && !chaptersLoading && (
                   <div className="text-center py-12 text-gray-500">
-                    <p>Select a chapter to view breakdown questions.</p>
+                    <p>Select a chapter to view practice questions.</p>
                   </div>
                 )}
               </>
@@ -597,7 +589,7 @@ export const Breakdowns: React.FC = () => {
                         <div>
                           <p className="font-medium">{chapter.name}</p>
                           <p className="text-sm text-gray-500">
-                            {chapter.questionCountBreakdowns || 0} questions
+                            {chapter.questionCountPractice || 0} questions
                           </p>
                         </div>
                         {selectedChapter === chapter.id && (

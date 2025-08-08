@@ -23,7 +23,7 @@ export const Course: React.FC = () => {
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
 
   useEffect(() => {
-    document.title = `${state?.courseTitle || 'Course'} - AuthFlow`;
+    document.title = `${state?.courseTitle || 'Course'} - Invisible Mechanics`;
   }, [state?.courseTitle]);
 
   // Redirect unauthenticated users

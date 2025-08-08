@@ -27,7 +27,7 @@ export const SignIn: React.FC = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'Sign In - AuthFlow';
+    document.title = 'Sign In - Invisible Mechanics';
   }, []);
 
   // Redirect authenticated users to dashboard
