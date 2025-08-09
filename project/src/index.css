@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom utilities */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Custom animations */
 @keyframes fade-in {
   from {
@@ -50,20 +58,20 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  @apply bg-primary-300 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+  @apply bg-primary-400;
 }
 
 /* Enhanced focus styles for better accessibility */
 .focus-visible:focus-visible {
-  @apply outline-none ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-800;
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
 }
 
 /* Input autofill styles */
@@ -73,13 +81,6 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: theme(colors.gray.900);
   -webkit-box-shadow: 0 0 0px 1000px theme(colors.white) inset;
   transition: background-color 5000s ease-in-out 0s;
-}
-
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: theme(colors.gray.100);
-  -webkit-box-shadow: 0 0 0px 1000px theme(colors.gray.800) inset;
 }
 
 /* Loading spinner */

@@ -2,12 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllTopicsWithURLs, TopicWithURL } from '../lib/data/topics';
+import { getAllChapters } from '../lib/data/questions';
 import { Navigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
+import { SavePlaylistModal } from '../components/SavePlaylistModal';
+import { CircularCheckbox } from '../components/CircularCheckbox';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
 
 // Location state passed from Diagnostic results screen
 interface LocationState {
   preselected?: string[]; // topic IDs answered incorrectly
+  selectedChapter?: string; // chapter ID selected in diagnostic
+}
+
+interface Chapter {
+  id: string;
+  name: string;
+  description?: string;
+  questionCountBreakdowns?: number;
+  questionCountPractice?: number;
+  questionCountTest?: number;
+  subject?: string;
+  section?: string;
 }
 
 export const ManualBuilder: React.FC = () => {
@@ -16,12 +33,16 @@ export const ManualBuilder: React.FC = () => {
   const { state } = useLocation() as { state: LocationState };
   const [topics, setTopics] = useState<TopicWithURL[]>([]);
   const [preselectedFromDiagnostic, setPreselectedFromDiagnostic] = useState<string[]>([]);
+  const [selectedChapterFromDiagnostic, setSelectedChapterFromDiagnostic] = useState<string>('Vectors');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Store the preselected IDs from diagnostic for later matching
+  // Store the preselected IDs and chapter from diagnostic for later matching
   useEffect(() => {
     if (state?.preselected) {
       setPreselectedFromDiagnostic(state.preselected);
+    }
+    if (state?.selectedChapter) {
+      setSelectedChapterFromDiagnostic(state.selectedChapter);
     }
   }, [state]);
 
@@ -29,23 +50,45 @@ export const ManualBuilder: React.FC = () => {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Chapter accordion state
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [chapterTopics, setChapterTopics] = useState<Record<string, TopicWithURL[]>>({});
+  const [loadingChapters, setLoadingChapters] = useState<Set<string>>(new Set());
   useEffect(() => {
-    document.title = 'Build Course Manually - AuthFlow';
+    document.title = 'Build Course Manually - Invisible Mechanics';
   }, []);
 
+  // Fetch all chapters and topics
   useEffect(() => {
-    const loadTopics = async (): Promise<void> => {
+    const loadAllChaptersAndTopics = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const topicsData = await getAllTopicsWithURLs();
-        setTopics(topicsData);
+        
+        // Fetch all chapters from Firebase
+        const allChapters = await getAllChapters();
+        console.log('Loaded chapters from Firebase:', allChapters);
+        
+        // Set chapters from Firebase
+        setChapters(allChapters);
+        
+        // Load topics for the selected chapter (from diagnostic or default to first chapter)
+        const defaultChapter = selectedChapterFromDiagnostic || (allChapters.length > 0 ? allChapters[0].id : 'Vectors');
+        const topicsData = await getAllTopicsWithURLs(defaultChapter);
+        
+        setChapterTopics({ [defaultChapter]: topicsData });
+        setTopics(topicsData); // Keep the existing topics array for compatibility
+        
+        // Expand the default chapter
+        setExpanded({ [defaultChapter]: true });
 
-        // After topics are loaded, match preselected IDs with actual topic data
+        // Handle preselected topics from diagnostic
         if (preselectedFromDiagnostic.length > 0) {
           const matchedTopicIds = new Set<string>();
           
-          // First try direct ID matching
           preselectedFromDiagnostic.forEach(preselectedId => {
             const directMatch = topicsData.find(topic => topic.id === preselectedId);
             if (directMatch) {
@@ -53,39 +96,27 @@ export const ManualBuilder: React.FC = () => {
             }
           });
 
-          // If no direct matches found, try matching by title (skillTag might be converted to title)
-          if (matchedTopicIds.size === 0) {
-            preselectedFromDiagnostic.forEach(preselectedId => {
-              // Try to find topic by converting preselected ID to title format
-              const titleMatch = topicsData.find(topic => 
-                topic.title.toLowerCase().replace(/\s+/g, '-') === preselectedId.toLowerCase() ||
-                topic.title.toLowerCase().replace(/\s+/g, '_') === preselectedId.toLowerCase() ||
-                topic.title.toLowerCase() === preselectedId.toLowerCase().replace(/-/g, ' ').replace(/_/g, ' ')
-              );
-              if (titleMatch) {
-                matchedTopicIds.add(titleMatch.id);
-              }
-            });
+          if (matchedTopicIds.size > 0) {
+            setSelectedIds(matchedTopicIds);
+            console.log(`Preselected ${matchedTopicIds.size} topics from diagnostic`);
           }
-
-          setSelectedIds(matchedTopicIds);
         }
       } catch (error) {
-        console.error('Failed to load topics:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load topics');
+        console.error('Error loading chapters and topics:', error);
+        setError('Failed to load chapters and topics. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadTopics();
-  }, [preselectedFromDiagnostic]);
+    loadAllChaptersAndTopics();
+  }, [preselectedFromDiagnostic, selectedChapterFromDiagnostic]);
 
   // Redirect unauthenticated users
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -114,10 +145,12 @@ export const ManualBuilder: React.FC = () => {
 
   const handleCreatePlaylist = (): void => {
     if (selectedIds.size === 0) return;
-    
+    setIsModalOpen(true);
+  };
+
+  const handleSaveSuccess = (): void => {
+    // Navigate to course page with selected topics after saving
     const selectedTopics = topics.filter(topic => selectedIds.has(topic.id));
-    
-    // Navigate to course page with selected topics
     navigate('/course', { 
       state: { 
         topics: selectedTopics,
@@ -126,16 +159,55 @@ export const ManualBuilder: React.FC = () => {
     });
   };
 
-  // Filter topics based on search term
+  const handleModalClose = (): void => {
+    setIsModalOpen(false);
+  };
+
+  const toggleChapter = async (chapterId: string): Promise<void> => {
+    const isExpanding = !expanded[chapterId];
+    
+    // Update expanded state
+    setExpanded(e => ({ ...e, [chapterId]: !e[chapterId] }));
+    
+    // If expanding and topics not loaded yet, load them
+    if (isExpanding && !chapterTopics[chapterId]) {
+      try {
+        console.log(`Loading topics for chapter: ${chapterId}`);
+        // Add to loading set
+        setLoadingChapters(prev => new Set(prev).add(chapterId));
+        
+        const topicsData = await getAllTopicsWithURLs(chapterId);
+        setChapterTopics(prev => ({ ...prev, [chapterId]: topicsData }));
+        
+        // Remove from loading set
+        setLoadingChapters(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chapterId);
+          return newSet;
+        });
+      } catch (error) {
+        console.error(`Error loading topics for chapter ${chapterId}:`, error);
+        // Remove from loading set and revert expansion if loading failed
+        setLoadingChapters(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chapterId);
+          return newSet;
+        });
+        setExpanded(e => ({ ...e, [chapterId]: false }));
+      }
+    }
+  };
+
+  // Filter topics based on search term (kept for compatibility)
   const filteredTopics = topics.filter(topic =>
     topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     topic.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-white shadow-md border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Logo />
@@ -143,7 +215,7 @@ export const ManualBuilder: React.FC = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => window.history.back()}
-                className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors"
+                className="text-sm font-medium text-gray-700 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors"
               >
                 ← Back to Dashboard
               </button>
@@ -155,10 +227,10 @@ export const ManualBuilder: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Build Course Manually
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-600 mb-6">
             Select topics to create your personalized learning playlist
           </p>
           
@@ -175,83 +247,162 @@ export const ManualBuilder: React.FC = () => {
                 placeholder="Search topics..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading topics...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading topics...</p>
               </div>
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-red-500 dark:text-red-400 mb-4">
+              <p className="text-red-500 mb-4">
                 Error loading topics: {error}
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="text-primary-600 hover:underline"
               >
                 Try again
               </button>
             </div>
           ) : (
             <>
-              {/* Topics List */}
+              {/* Chapter Accordion */}
               <div className="space-y-4 overflow-y-auto max-h-[70vh] mb-6 pr-4">
-                {filteredTopics.length === 0 ? (
+                {isLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {searchTerm ? 'No topics match your search.' : 'No topics found in the database. Please add some topics to get started.'}
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+                    <p className="text-gray-500">
+                      Loading topics...
+                    </p>
+                  </div>
+                ) : chapters.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      No topics found. Please check your connection and try again.
                     </p>
                   </div>
                 ) : (
-                  filteredTopics.map((topic) => (
-                    <div
-                      key={topic.id}
-                      className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg flex items-center hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      {/* Topic Info */}
-                      <div className="flex-1">
-                        <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
-                          {topic.title}
-                        </h3>
-                        <div className="flex items-center mt-1 space-x-4">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {formatDuration(topic.durationSec)}
-                          </span>
-                          {topic.prereq.length > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-500">
-                              {topic.prereq.length} prerequisite{topic.prereq.length !== 1 ? 's' : ''}
-                            </span>
+                  chapters
+                    .filter(chapter => {
+                      if (!searchTerm) return true;
+                      const topicsInChapter = chapterTopics[chapter.id] || [];
+                      // If no topics loaded yet, show the chapter (will load when expanded)
+                      if (topicsInChapter.length === 0) return true;
+                      return topicsInChapter.some(topic =>
+                        topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        topic.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                      );
+                    })
+                    .map(chapter => {
+                      const topicsInChapter = chapterTopics[chapter.id] || [];
+                      const filteredChapterTopics = searchTerm
+                        ? topicsInChapter.filter(topic =>
+                            topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            topic.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                        : topicsInChapter;
+
+                      // Only hide chapters if they have loaded topics but none match the search
+                      if (searchTerm && topicsInChapter.length > 0 && filteredChapterTopics.length === 0) return null;
+
+                      return (
+                        <div key={chapter.id} className="mb-6">
+                          {/* Chapter Header */}
+                          <div
+                            onClick={() => toggleChapter(chapter.id)}
+                            className="cursor-pointer bg-primary-50 hover:bg-primary-100 transition-colors p-4 rounded-lg border border-primary-200 mb-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h2 className="text-lg font-semibold text-primary-700">
+                                {chapter.name}
+                              </h2>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-primary-600">
+                                  {loadingChapters.has(chapter.id)
+                                    ? 'Loading...'
+                                    : topicsInChapter.length > 0 
+                                      ? `${filteredChapterTopics.length} topic${filteredChapterTopics.length !== 1 ? 's' : ''}`
+                                      : 'Click to load topics'
+                                  }
+                                </span>
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 hover:bg-primary-200 transition-colors">
+                                  {expanded[chapter.id] ? (
+                                    <ChevronDown className="w-4 h-4 text-primary-600" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-primary-600" />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Topics in Chapter */}
+                          {expanded[chapter.id] && (
+                            <div className="space-y-2 ml-4">
+                              {loadingChapters.has(chapter.id) ? (
+                                <div className="flex items-center justify-center py-4">
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-2"></div>
+                                  <span className="text-sm text-gray-500">Loading topics...</span>
+                                </div>
+                              ) : filteredChapterTopics.length === 0 ? (
+                                <div className="text-center py-4">
+                                  <span className="text-sm text-gray-500">No topics found in this chapter</span>
+                                </div>
+                              ) : (
+                                filteredChapterTopics.map((topic) => (
+                                <div
+                                  key={topic.id}
+                                  className="bg-gray-50 p-3 rounded-lg flex items-center hover:bg-gray-100 transition-colors"
+                                >
+                                  {/* Topic Info */}
+                                  <div className="flex-1">
+                                    <h3 className="text-base font-medium text-gray-900">
+                                      {topic.title}
+                                    </h3>
+                                    <div className="flex items-center mt-1 space-x-4">
+                                      <span className="text-sm text-gray-600">
+                                        {formatDuration(topic.durationSec)}
+                                      </span>
+                                      {topic.prereq.length > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                          {topic.prereq.length} prerequisite{topic.prereq.length !== 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Checkbox - Centered vertically */}
+                                  <div className="flex items-center justify-center ml-4">
+                                    <CircularCheckbox
+                                      checked={selectedIds.has(topic.id)}
+                                      onChange={() => handleTopicToggle(topic.id)}
+                                    />
+                                  </div>
+                                </div>
+                                ))
+                              )}
+                            </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {/* Checkbox - Centered vertically */}
-                      <div className="flex items-center justify-center ml-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(topic.id)}
-                          onChange={() => handleTopicToggle(topic.id)}
-                          className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
-                        />
-                      </div>
-                    </div>
-                  ))
+                      );
+                    })
+                    .filter(Boolean)
                 )}
               </div>
 
               {/* Create Playlist Button */}
-              <div className="border-t border-gray-200 dark:border-gray-600 pt-6">
+              <div className="border-t border-gray-200 pt-6">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-600">
                     {selectedIds.size > 0 ? (
                       `${selectedIds.size} topic${selectedIds.size !== 1 ? 's' : ''} selected`
                     ) : (
@@ -267,7 +418,7 @@ export const ManualBuilder: React.FC = () => {
                   <button
                     onClick={handleCreatePlaylist}
                     disabled={selectedIds.size === 0}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
+                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
                   >
                     Create Playlist
                   </button>
@@ -277,6 +428,14 @@ export const ManualBuilder: React.FC = () => {
           )}
         </div>
       </main>
+      
+      {/* Save Playlist Modal */}
+      <SavePlaylistModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        selectedTopics={Array.from(selectedIds)}
+        onSuccess={handleSaveSuccess}
+      />
     </div>
   );
 };

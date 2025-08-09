@@ -1,4 +1,4 @@
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, doc } from 'firebase/firestore';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { firestore, storage } from '../firebase';
 
@@ -28,18 +28,20 @@ interface FirestoreTopicDoc {
 }
 
 /**
- * Fetches all topics from Firestore and resolves their storage paths to download URLs
+ * Fetches all topics from a specific chapter in Firestore and resolves their storage paths to download URLs
+ * @param chapterId - The ID of the chapter to fetch topics for (defaults to 'Vectors' for backwards compatibility)
  * @returns Promise<TopicWithURL[]> - Array of topics with resolved URLs, sorted by order
  */
-export async function getAllTopicsWithURLs(): Promise<TopicWithURL[]> {
+export async function getAllTopicsWithURLs(chapterId: string = 'Vectors'): Promise<TopicWithURL[]> {
   try {
-    console.log('Fetching topics from Firestore...');
-    // Query Firestore collection
-    const topicsCollection = collection(firestore, 'Test Database-Video');
+    console.log(`Fetching topics from Firestore for chapter: ${chapterId}...`);
+    // Query Firestore subcollection: Chapters/{chapterId}/{chapterId}-Theory
+    const chapterDoc = doc(firestore, 'Chapters', chapterId);
+    const topicsCollection = collection(chapterDoc, `${chapterId}-Theory`);
     const topicsQuery = query(topicsCollection, orderBy('order', 'asc'));
     const querySnapshot = await getDocs(topicsQuery);
 
-    console.log(`Found ${querySnapshot.docs.length} topics in Firestore`);
+    console.log(`Found ${querySnapshot.docs.length} topics in Firestore for ${chapterId}`);
     
     // Process all documents in parallel for better performance
     const topicPromises = querySnapshot.docs.map(async (docSnapshot) => {

@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left vertical bar -->
+  <rect x="4" y="8" width="12" height="48" rx="2" fill="#8B5DFF"/>
+  
+  <!-- Top horizontal bar -->
+  <rect x="16" y="8" width="44" height="12" rx="6" fill="#8B5DFF"/>
+  
+  <!-- Middle chevron pointing right -->
+  <path d="M16 20 L36 20 L52 32 L36 44 L16 44 L32 32 L16 20Z" fill="#8B5DFF"/>
+  
+  <!-- Bottom horizontal bar -->
+  <rect x="16" y="44" width="44" height="12" rx="6" fill="#8B5DFF"/>
+</svg>

@@ -5,20 +5,19 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
-// Read config values from Vite environment variables
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
-const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID;
-const appId = import.meta.env.VITE_FIREBASE_APP_ID;
-const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID;
+// Read config values from Vite environment variables, with fallbacks for demo
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key';
+const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com';
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project';
+const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com';
+const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789012';
+const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789012:web:abcdef123456789012345678';
+const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXXXXX';
 const useEmulator = import.meta.env.VITE_USE_EMULATOR === 'true';
 
-// Validate required environment variables
-if (!apiKey || !authDomain || !projectId || !storageBucket || !messagingSenderId || !appId) {
-  console.error('Missing one or more VITE_FIREBASE_* variables');
-  throw new Error('Firebase config missing');
+// Log warning if using demo config
+if (apiKey === 'demo-api-key') {
+  console.warn('🚨 Using demo Firebase config. Create .env.local with real Firebase credentials for full functionality.');
 }
 
 const firebaseConfig = {
