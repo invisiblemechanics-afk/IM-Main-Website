@@ -3,6 +3,7 @@ import { useLocation, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/Logo';
 import { TopicWithURL } from '../lib/data/topics';
+import { LoaderOne } from '../components/ui/loader';
 import { Play, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import CustomVideoPlayer from '../components/CustomVideoPlayer';
 
@@ -30,7 +31,7 @@ export const Course: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }
@@ -164,7 +165,9 @@ export const Course: React.FC = () => {
             {videoLoading && (
               <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                  <div className="flex justify-center mb-4">
+                    <LoaderOne />
+                  </div>
                   <p className="text-gray-700 font-medium">Loading video...</p>
                 </div>
               </div>

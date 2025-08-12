@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { X } from 'lucide-react';
+import { LoaderOne } from './ui/loader';
 
 interface SavePlaylistModalProps {
   isOpen: boolean;
@@ -148,7 +149,9 @@ export const SavePlaylistModal: React.FC<SavePlaylistModalProps> = ({
           >
             {isSaving ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="mr-2">
+                  <LoaderOne />
+                </div>
                 Saving...
               </>
             ) : (

@@ -20,6 +20,8 @@ if (apiKey === 'demo-api-key') {
   console.warn('🚨 Using demo Firebase config. Create .env.local with real Firebase credentials for full functionality.');
 }
 
+// console.log('Firebase config loaded:', { apiKey: apiKey.substring(0, 10) + '...', authDomain, projectId });
+
 const firebaseConfig = {
   apiKey,
   authDomain,

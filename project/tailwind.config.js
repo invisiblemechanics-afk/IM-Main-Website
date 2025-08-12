@@ -4,6 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Keep existing primary/secondary for compatibility
         primary: {
           50: '#f5f3ff',
           100: '#ede9fe',
@@ -27,8 +28,30 @@ export default {
           700: '#7e22ce',
           800: '#6b21a8',
           900: '#581c87',
-        }
-      }
+        },
+        // New premium tokens
+        bg: "#FAFAFC",
+        surface: "#FFFFFF",
+        border: "#E9ECF2",
+        text: {
+          DEFAULT: "#0E1116",
+          muted: "#5B6372",
+        },
+        accent: {
+          DEFAULT: "#7C5CFF",
+          weak: "#EFEAFF",
+        },
+      },
+      boxShadow: {
+        card: "0 1px 2px rgba(16,24,40,.04)",
+        cardHover: "0 10px 30px rgba(16,24,40,.08)",
+      },
+      borderRadius: {
+        xl2: "1rem", // alias for rounded-2xl
+      },
+      letterSpacing: {
+        tight2: "-0.02em",
+      },
     },
   },
   plugins: [],

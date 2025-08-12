@@ -1,0 +1,101 @@
+/* nta-instructions.css */
+/* Neutral, system-like font to match NTA look */
+/* Try to match NTA neutral system font stack and sizes */
+.nta-root { font-family: Arial, Helvetica, sans-serif; color: #000; background: #fff; }
+
+/* Top blue strip */
+.nta-topbar {
+  background: #1d4e89; /* deep blue like NTA */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #fff;
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nta-topbar__home {
+  margin-right: 12px;
+}
+
+/* Header with logos + language */
+.nta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  position: sticky;
+  top: 28px; /* Position below the topbar */
+  background: #fff;
+  z-index: 99;
+  border-bottom: 1px solid #e8e8e8;
+}
+.nta-header__left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nta-logo { display: block; }
+.nta-logo--nta { height: 48px; }
+.nta-logo--moe { height: 42px; }
+.nta-logo--azadi { height: 42px; }
+.nta-header__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nta-langlabel { font-size: 13px; color: #333; }
+.nta-select {
+  border: 1px solid #cfd6e0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+/* Main */
+.nta-main { max-width: 980px; margin: 0 auto; padding: 8px 16px 40px; }
+.nta-title { text-transform: uppercase; letter-spacing: .5px; font-weight: 700; font-size: 20px; margin: 12px 0 10px; text-align: center; }
+.nta-subtitle { text-align: center; font-size: 16px; font-weight: 700; margin: 6px 0 18px; }
+
+.nta-section { margin-top: 12px; }
+.nta-section__heading { font-size: 16px; font-weight: 700; margin: 10px 0 8px; }
+
+/* Ordered lists styled like NTA */
+.nta-ol { margin-left: 22px; line-height: 1.6; font-size: 14px; color: #222; }
+.nta-ol--alpha { list-style-type: lower-alpha; margin-top: 6px; }
+.nta-ol--sub { list-style-type: lower-alpha; margin-top: 6px; }
+.nta-ol--numbered { list-style-type: decimal; margin-top: 6px; }
+
+/* Status icons row */
+.nta-statusrow { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.nta-statusimg { width: 26px; height: 26px; object-fit: contain; }
+
+/* Inline navigation icons */
+.nta-inline-icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin: 0 2px; }
+
+/* Tiny status icons to mimic NTA palette */
+.nta-status { display: inline-block; vertical-align: middle; }
+.nta-status--box { width: 18px; height: 18px; border: 2px solid #c8c8c8; background: #efefef; border-radius: 2px; }
+.nta-status--answered { background: #38b46b; border-color: #2f9a5a; }
+.nta-status--flag { width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #e8791a; }
+.nta-status--dot { width: 18px; height: 18px; border-radius: 50%; background: #9a4ff1; display: inline-block; }
+.nta-status--marked { background: #7b43c8; }
+
+/* Note line in red like NTA */
+.nta-note { margin-top: 10px; color: #cf2a2a; font-size: 13px; }
+
+/* Agree & proceed row */
+.nta-agree { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.nta-agree__label { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; flex: 1 1 auto; }
+.nta-checkbox { margin-top: 2px; width: 16px; height: 16px; }
+.nta-proceed { min-width: 190px; height: 42px; border-radius: 4px; border: none; font-weight: 700; letter-spacing: .5px; color: #fff; }
+.nta-proceed.is-disabled { background: #9bdba9; cursor: not-allowed; opacity: .7; }
+.nta-proceed.is-enabled { background: #28a745; cursor: pointer; }
+
+/* Footer */
+.nta-footer { text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e8e8e8; padding: 14px 10px 24px; margin-top: 14px; }
+
+

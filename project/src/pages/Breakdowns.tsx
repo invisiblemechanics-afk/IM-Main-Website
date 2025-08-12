@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getAllChapters } from '../lib/data/questions';
 import { Logo } from '../components/Logo';
 import { CircularCheckbox } from '../components/CircularCheckbox';
+import { LoaderOne } from '../components/ui/loader';
 import { BreakdownQuestionCard } from '../components/breakdowns/BreakdownQuestionCard';
 import { SlideDeck } from '../components/breakdowns/SlideDeck';
 import { OptionBlock } from '../components/breakdowns/OptionBlock';
@@ -128,7 +129,7 @@ export const Breakdowns: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }
@@ -398,7 +399,9 @@ export const Breakdowns: React.FC = () => {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <div className="flex justify-center mb-4">
+              <LoaderOne />
+            </div>
             <p className="text-gray-500">Loading breakdown slides...</p>
           </div>
         </div>
@@ -409,7 +412,9 @@ export const Breakdowns: React.FC = () => {
       <div className={styles.container}>
         <SlideDeck 
           slides={currentSlides}
-          onBackToQuestion={() => setViewMode('question')} 
+          onBackToQuestion={() => setViewMode('question')}
+          problemId={selectedQuestion?.id}
+          problemTitle={selectedQuestion?.question}
         />
       </div>
     );
@@ -563,7 +568,9 @@ export const Breakdowns: React.FC = () => {
             {/* Question Cards Grid */}
             {questionsLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <div className="flex justify-center mb-4">
+                  <LoaderOne />
+                </div>
                 <p className="text-gray-500">Loading breakdown questions...</p>
               </div>
             ) : (
@@ -608,7 +615,7 @@ export const Breakdowns: React.FC = () => {
               <div className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {chaptersLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                    <LoaderOne />
                     <span className="ml-2 text-sm text-gray-500">Loading chapters...</span>
                   </div>
                 ) : chaptersError ? (

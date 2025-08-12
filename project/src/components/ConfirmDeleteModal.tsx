@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import { LoaderOne } from './ui/loader';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -68,7 +69,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
           >
             {isDeleting ? (
               <>
-                <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <div className="mr-2">
+                  <LoaderOne />
+                </div>
                 Deleting...
               </>
             ) : (

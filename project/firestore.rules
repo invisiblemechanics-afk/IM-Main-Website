@@ -1,6 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Additional validation for user updates
+      allow create: if request.auth != null 
+                    && request.auth.uid == userId;
+      
+      allow update: if request.auth != null 
+                    && request.auth.uid == userId
+                    && (request.resource.data.uid == userId || request.resource.data.uid == null);
+    }
+    
     // Allow users to read and write their own playlist documents
     match /users/{userId}/playlists/{playlistId} {
       allow read, write: if request.auth != null
@@ -34,6 +47,54 @@ service cloud.firestore {
     match /userAnswers/{uaId} {
       allow create: if request.auth.uid == request.resource.data.userId;
       allow read, update, delete: if request.auth.uid == resource.data.userId;
+    }
+    
+    // Community: Threads collection with subcollections
+    function signedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isSelf(uid) { 
+      return signedIn() && request.auth.uid == uid; 
+    }
+    
+    match /threads/{threadId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.author.id == request.auth.uid
+        && request.resource.data.author.username is string
+        && request.resource.data.title is string
+        && request.resource.data.bodyMarkdown is string
+        && request.resource.data.score == 0
+        && request.resource.data.commentCount == 0;
+
+      allow update, delete: if signedIn()
+        && resource.data.author.id == request.auth.uid;
+
+      match /votes/{uid} {
+        allow read: if true;
+        allow create, update, delete: if isSelf(uid)
+          && request.resource.data.value in [1, -1];
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+
+        allow create: if signedIn()
+          && request.resource.data.author.id == request.auth.uid
+          && request.resource.data.author.username is string
+          && request.resource.data.bodyMarkdown is string;
+
+        allow update, delete: if signedIn()
+          && resource.data.author.id == request.auth.uid;
+
+        match /votes/{uid} {
+          allow read: if true;
+          allow create, update, delete: if isSelf(uid)
+            && request.resource.data.value in [1, -1];
+        }
+      }
     }
     
     // Default rule - deny all other operations
