@@ -4,3 +4,5 @@ export function SpotlightSection({ children, className = "" }: React.PropsWithCh
   return <section className={`spotlight-bg ${className}`}>{children}</section>;
 }
 
+
+
