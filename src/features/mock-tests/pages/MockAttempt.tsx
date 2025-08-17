@@ -281,75 +281,41 @@ export default function MockAttempt() {
         throw new Error('No questions found for evaluation');
       }
 
-      console.log('Evaluating', orderedQuestions.length, 'questions...');
+      // Fast evaluation with pre-calculated duration
+      const durationSec = Math.max(0, Math.floor((Date.now() - attemptStartRef.current) / 1000));
+      const defaultMarks = { marksCorrect: undefined, marksWrong: undefined };
+      
       const evals = orderedQuestions.map((qq) =>
-        evaluateOne(
-          qq,
-          responses[qq.id],
-          timeMap[qq.id] ?? 0,
-          { marksCorrect: undefined, marksWrong: undefined }
-        )
+        evaluateOne(qq, responses[qq.id], timeMap[qq.id] ?? 0, defaultMarks)
       );
 
-      const durationSec = Math.max(0, Math.floor((Date.now() - attemptStartRef.current) / 1000));
-      const analytics = aggregate(evals, orderedQuestions, durationSec, { marksCorrect: undefined, marksWrong: undefined });
+      const analytics = aggregate(evals, orderedQuestions, durationSec, defaultMarks);
 
       // Persist attempt under user document
       const uid = auth.currentUser.uid;
       
-      // Generate a more reliable attempt ID
-      const attemptId = `attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Fast attempt ID generation
+      const attemptId = `attempt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       
-      // Streamlined payload creation (remove unnecessary deep cleaning)
-      const cleanTotals = {
-        totalQuestions: analytics.totals.totalQuestions || 0,
-        attempted: analytics.totals.attempted || 0,
-        correct: analytics.totals.correct || 0,
-        incorrect: analytics.totals.incorrect || 0,
-        partial: analytics.totals.partial || 0,
-        unattempted: analytics.totals.unattempted || 0,
-        score: analytics.totals.score || 0,
-        maxScore: analytics.totals.maxScore || 0,
-        durationSec: analytics.totals.durationSec || 0,
-      };
-
-      // Simplified cleaning for byDifficulty and byChapter
-      const cleanByDifficulty = analytics.byDifficulty || {};
-      const cleanByChapter = analytics.byChapter || {};
-
+      // Ultra-fast payload creation - minimal processing
       const payload = {
-        testId: String(test.id || ''),
-        testTitle: String(test.name || ''),
-        exam: String(test.exam || ''),
+        testId: test.id,
+        testTitle: test.name,
+        exam: test.exam,
         startedAt: new Date(attemptStartRef.current).toISOString(),
         submittedAt: serverTimestamp(),
         isViolation: Boolean(isViolation),
-        totals: cleanTotals,
-        byDifficulty: cleanByDifficulty,
-        byChapter: cleanByChapter,
-        perQuestion: analytics.perQuestion.map((pq) => ({
-          qid: pq.qid || '',
-          result: pq.result || 'unattempted',
-          score: pq.score || 0,
-          timeSec: pq.timeSec || 0,
-          difficulty: pq.difficulty || 'unknown',
-          type: pq.type || 'MCQ',
-          chapter: pq.chapter || null,
-          chapterId: pq.chapterId || null,
-          skillTags: pq.skillTags || [],
-          response: responses[pq.qid] || null,
-          questionText: pq.questionText || '',
-          choices: pq.choices || [],
-        })),
+        totals: analytics.totals,
+        byDifficulty: analytics.byDifficulty,
+        byChapter: analytics.byChapter,
+        perQuestion: analytics.perQuestion,
       };
 
       // Fast submission to Firestore
-      console.log('Submitting test attempt...', { attemptId, uid, isViolation: payload.isViolation });
-      
       const docRef = doc(collection(db, 'users', uid, 'mockTestAttempts'), attemptId);
       await setDoc(docRef, payload);
 
-      console.log('Test submitted successfully, navigating to results...');
+      // Navigate immediately after successful submission
       navigate(`/mock-tests/result/${attemptId}`);
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -482,7 +448,12 @@ export default function MockAttempt() {
               <button className="btn btn-outline" onClick={() => goTo(idx + 1)}>NEXT »</button>
               <button 
                 className="btn btn-green" 
-                onClick={() => handleSubmitTest(false)}
+                onClick={() => {
+                  // Immediate UI feedback
+                  setIsSubmitting(true);
+                  // Start submission asynchronously
+                  handleSubmitTest(false);
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}

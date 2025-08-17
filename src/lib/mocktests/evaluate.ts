@@ -91,7 +91,7 @@ export function evalMultiple(
   const hasPartialScoring = q.partialCorrect || (q.partialScheme?.mode === 'perOption');
   const perOptionMarks = q.perOptionMarks || 1; // Default to 1 mark per option
 
-  console.log('🔍 MultipleAnswer Evaluation Debug:', {
+    console.log('🔍 MultipleAnswer Evaluation Debug:', {
     questionId: q.id,
     partialCorrect: q.partialCorrect,
     partialScheme: q.partialScheme,
@@ -105,46 +105,47 @@ export function evalMultiple(
     marksWrong
   });
 
-  if (!hasPartialScoring) {
-    console.log('📊 Using all-or-nothing scoring (no partial scoring enabled)');
-    const exact = wrongChosen === 0 && correctChosen === correct.size && chosen.size === correct.size;
-    return { result: (exact ? 'correct' : 'incorrect') as ResultKind, score: exact ? marksCorrect : marksWrong };
+  // Rule 1: If even one wrong option is chosen, award marksWrong (-2)
+  if (wrongChosen > 0) {
+    console.log('📊 Wrong option(s) chosen - awarding marksWrong:', marksWrong);
+    return { result: 'incorrect' as ResultKind, score: marksWrong };
   }
 
-  console.log('📊 Using partial scoring - perOption mode');
-  
-  // For partial scoring: use perOptionMarks for each correct option selected
-  let score = correctChosen * perOptionMarks; // e.g., 2 correct × 1 mark = +2
-  
-  // Apply negative marking for wrong choices if configured
-  if (wrongChosen > 0 && marksWrong < 0) {
-    // Use the marksWrong value per wrong choice
-    score += wrongChosen * marksWrong;
+  // Rule 2: If all correct options are chosen (and no wrong ones), award marksCorrect (+4)
+  if (correctChosen === correct.size && wrongChosen === 0) {
+    console.log('📊 All correct options chosen - awarding marksCorrect:', marksCorrect);
+    return { result: 'correct' as ResultKind, score: marksCorrect };
   }
-  
-  console.log('📊 Partial scoring calculation:', {
-    correctChosen,
-    perOptionMarks,
-    baseScore: correctChosen * perOptionMarks,
-    wrongChosen,
-    marksWrong,
-    negativeMarks: wrongChosen > 0 && marksWrong < 0 ? wrongChosen * marksWrong : 0,
-    finalScore: score
-  });
-  
-  // Determine result type
-  let result: ResultKind;
+
+  // Rule 3: Partial marking only when:
+  // - Not all correct options are chosen (correctChosen < correct.size)
+  // - No wrong options are chosen (wrongChosen === 0)
+  // - At least one correct option is chosen (correctChosen > 0)
+  if (hasPartialScoring && correctChosen > 0 && correctChosen < correct.size && wrongChosen === 0) {
+    console.log('📊 Partial scoring conditions met - awarding partial marks');
+    
+    // Use perOptionMarks for each correct option selected
+    const score = correctChosen * perOptionMarks;
+    
+    console.log('📊 Partial scoring calculation:', {
+      correctChosen,
+      perOptionMarks,
+      finalScore: score,
+      totalCorrectOptions: correct.size
+    });
+
+    return { result: 'partial' as ResultKind, score };
+  }
+
+  // Rule 4: If no correct options chosen, award marksWrong
   if (correctChosen === 0) {
-    result = 'incorrect';
-  } else if (correctChosen === correct.size && wrongChosen === 0) {
-    result = 'correct';
-  } else {
-    result = 'partial';
+    console.log('📊 No correct options chosen - awarding marksWrong:', marksWrong);
+    return { result: 'incorrect' as ResultKind, score: marksWrong };
   }
-  
-  console.log('📊 Final evaluation result:', { result, score });
-  
-  return { result, score };
+
+  // Fallback (should not reach here with current logic)
+  console.log('📊 Fallback case - awarding marksWrong:', marksWrong);
+  return { result: 'incorrect' as ResultKind, score: marksWrong };
 }
 
 export function evalNumerical(
