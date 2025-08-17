@@ -8,12 +8,12 @@ import {
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { doc, setDoc, getDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
-import { createOrUpdateUserProfile } from '../../lib/auth/userProfile';
+import { createOrUpdateUserProfile } from '@/lib/auth/userProfile';
 import { ChevronDownIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
-import { auth, firestore } from '../../lib/firebase';
-import { useRecaptcha } from '../../hooks/useRecaptcha';
+import { auth, firestore } from '@/lib/firebase';
+import { useRecaptcha } from '@/hooks/useRecaptcha';
 import { 
   COUNTRY_OPTIONS, 
   DEFAULT_COUNTRY, 
@@ -21,7 +21,7 @@ import {
   formatToE164,
   formatForDisplay,
   CountryOption 
-} from '../../lib/phone';
+} from '@/lib/phone';
 import '../../styles/auth-phone.css';
 import { LoaderOne } from '../ui/loader';
 

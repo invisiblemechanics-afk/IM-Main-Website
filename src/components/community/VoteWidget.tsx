@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { voteService } from '../../services/community';
-import { rateLimiter, RATE_LIMITS } from '../../lib/community/rateLimit';
+import { useAuth } from '@/context/AuthContext';
+import { voteService } from '@/services/community';
+import { rateLimiter, RATE_LIMITS } from '@/lib/community/rateLimit';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { ChevronUpIcon as ChevronUpSolidIcon, ChevronDownIcon as ChevronDownSolidIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';

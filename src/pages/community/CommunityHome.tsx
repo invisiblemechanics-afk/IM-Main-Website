@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Logo } from '../../components/Logo';
-import { Feed } from '../../components/community/Feed';
-import { LoaderOne } from '../../components/ui/loader';
+import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
+import { Feed } from '@/components/community/Feed';
+import { LoaderOne } from '@/components/ui/loader';
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { SortOption, TimeFilter } from '../../lib/community/types';
+import { SortOption, TimeFilter } from '@/lib/community/types';
 
 export const CommunityHome: React.FC = () => {
   const { user } = useAuth();

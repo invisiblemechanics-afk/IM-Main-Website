@@ -6,9 +6,9 @@ import {
   Minus, BarChart3, PieChart, Eye, Award, Download 
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
-import { firestore as db, auth } from '../../../lib/firebase';
-import { LaTeXRenderer } from '../../../components/LaTeXRenderer';
-import { LoaderOne } from '../../../components/ui/loader';
+import { firestore as db, auth } from '@/lib/firebase';
+import { LaTeXRenderer } from '@/components/LaTeXRenderer';
+import { LoaderOne } from '@/components/ui/loader';
 
 type AttemptDoc = {
   testId: string;

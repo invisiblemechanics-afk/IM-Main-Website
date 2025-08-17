@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { voteService } from '../../services/community';
+import { voteService } from '@/services/community';
 import { runTransaction } from 'firebase/firestore';
 
 // Mock Firebase

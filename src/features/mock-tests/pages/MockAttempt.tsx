@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import '../../../styles/nta-mock.css';
-import { getHydratedTest, AttemptQuestion } from '../../../services/tests';
-import { LaTeXRenderer } from '../../../components/LaTeXRenderer';
-import { evaluateOne, aggregate, type UserResponse, type TestQuestion } from '../../../lib/mocktests/evaluate';
-import { firestore as db, auth } from '../../../lib/firebase';
+import '@/styles/nta-mock.css';
+import { getHydratedTest, AttemptQuestion } from '@/services/tests';
+import { LaTeXRenderer } from '@/components/LaTeXRenderer';
+import { evaluateOne, aggregate, type UserResponse, type TestQuestion } from '@/lib/mocktests/evaluate';
+import { firestore as db, auth } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
-import TestGuard from '../../../components/proctoring/TestGuard';
-import ntaLogo from '../../../assets/images/NTA_logo.png';
-import moeLogo from '../../../assets/images/moe1.png';
-import azadiLogo from '../../../assets/images/akam.png';
-import Logo1 from '../../../assets/images/Logo1.png';
-import Logo2 from '../../../assets/images/Logo2.png';
-import Logo3 from '../../../assets/images/Logo3.png';
-import Logo4 from '../../../assets/images/Logo4.png';
-import Logo5 from '../../../assets/images/Logo5.png';
+import TestGuard from '@/components/proctoring/TestGuard';
+import ntaLogo from '@/assets/images/NTA_logo.png';
+import moeLogo from '@/assets/images/moe1.png';
+import azadiLogo from '@/assets/images/akam.png';
+import Logo1 from '@/assets/images/Logo1.png';
+import Logo2 from '@/assets/images/Logo2.png';
+import Logo3 from '@/assets/images/Logo3.png';
+import Logo4 from '@/assets/images/Logo4.png';
+import Logo5 from '@/assets/images/Logo5.png';
 
 type Status = 'unvisited' | 'notanswered' | 'answered' | 'marked' | 'ansmarked';
 

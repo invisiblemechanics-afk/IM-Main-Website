@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Logo } from '../../components/Logo';
-import { LoaderOne } from '../../components/ui/loader';
-import { MarkdownEditor } from '../../components/community/MarkdownEditor';
-import { EmbedPreview } from '../../components/community/EmbedPreview';
+import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
+import { LoaderOne } from '@/components/ui/loader';
+import { MarkdownEditor } from '@/components/community/MarkdownEditor';
+import { EmbedPreview } from '@/components/community/EmbedPreview';
 import { XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline';
-import { generateSlug } from '../../lib/community/utils';
-import { createThreadSchema } from '../../lib/community/validation';
-import { uploadService } from '../../services/upload';
-import { threadService } from '../../services/community';
-import { rateLimiter, RATE_LIMITS } from '../../lib/community/rateLimit';
+import { generateSlug } from '@/lib/community/utils';
+import { createThreadSchema } from '@/lib/community/validation';
+import { uploadService } from '@/services/upload';
+import { threadService } from '@/services/community';
+import { rateLimiter, RATE_LIMITS } from '@/lib/community/rateLimit';
 import toast from 'react-hot-toast';
 
 interface LocationState {

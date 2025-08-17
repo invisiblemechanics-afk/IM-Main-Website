@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ThreadListItem } from '../../lib/community/types';
+import { ThreadListItem } from '@/lib/community/types';
 import { VoteWidget } from './VoteWidget';
-import { formatDistanceToNow } from '../../lib/community/utils';
+import { formatDistanceToNow } from '@/lib/community/utils';
 import { ChatBubbleLeftIcon, PhotoIcon } from '@heroicons/react/24/outline';
 
 interface ThreadCardProps {

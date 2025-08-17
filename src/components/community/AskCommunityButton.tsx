@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { CommentWithChildren } from '../../lib/community/types';
+import { CommentWithChildren } from '@/lib/community/types';
 import { VoteWidget } from './VoteWidget';
 import { CommentComposer } from './CommentComposer';
-import { formatDistanceToNow } from '../../lib/community/utils';
-import { useAuth } from '../../context/AuthContext';
+import { formatDistanceToNow } from '@/lib/community/utils';
+import { useAuth } from '@/context/AuthContext';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 
 interface CommentTreeProps {

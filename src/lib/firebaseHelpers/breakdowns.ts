@@ -11,7 +11,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { firestore, auth } from '../firebase';
-import type { Chapter, Breakdown, Slide, UserAnswers, UserAnswerEntry } from '../../types/firebase';
+import type { Chapter, Breakdown, Slide, UserAnswers, UserAnswerEntry } from '@/types/firebase';
 
 // Chapter helpers
 export async function getChapters(): Promise<Chapter[]> {

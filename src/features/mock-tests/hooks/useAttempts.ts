@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getRecentAttempts, hasUserAttemptedTest, getUserTestAttempt, MockTestAttempt } from '../../../services/mockTestAttempts';
-import { useAuth } from '../../../context/AuthContext';
+import { getRecentAttempts, hasUserAttemptedTest, getUserTestAttempt, MockTestAttempt } from '@/services/mockTestAttempts';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Hook to get recent attempts for the current user

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, Clock3, Calendar, AlertTriangle } from 'lucide-react';
 import { useRecentAttempts } from '../hooks/useAttempts';
-import { formatDuration } from '../../../services/mockTestAttempts';
+import { formatDuration } from '@/services/mockTestAttempts';
 
 export default function MockHistory(): JSX.Element {
   const { attempts: allAttempts, loading, error } = useRecentAttempts(50); // Get more attempts for history

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { Logo } from '../../components/Logo';
-import { LoaderOne } from '../../components/ui/loader';
-import { VoteWidget } from '../../components/community/VoteWidget';
-import { CommentTree } from '../../components/community/CommentTree';
-import { CommentComposer } from '../../components/community/CommentComposer';
-import { EmbeddedBreakdownSlide } from '../../components/community/EmbeddedBreakdownSlide';
-import { ShareButton } from '../../components/community/ShareButton';
-import { ThreadDetail as ThreadDetailType, CommentWithChildren, BreakdownContext } from '../../lib/community/types';
-import { formatDistanceToNow } from '../../lib/community/utils';
-import { threadService, commentService, voteService } from '../../services/community';
+import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
+import { LoaderOne } from '@/components/ui/loader';
+import { VoteWidget } from '@/components/community/VoteWidget';
+import { CommentTree } from '@/components/community/CommentTree';
+import { CommentComposer } from '@/components/community/CommentComposer';
+import { EmbeddedBreakdownSlide } from '@/components/community/EmbeddedBreakdownSlide';
+import { ShareButton } from '@/components/community/ShareButton';
+import { ThreadDetail as ThreadDetailType, CommentWithChildren, BreakdownContext } from '@/lib/community/types';
+import { formatDistanceToNow } from '@/lib/community/utils';
+import { threadService, commentService, voteService } from '@/services/community';
 import { ArrowLeftIcon, ChatBubbleLeftIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 

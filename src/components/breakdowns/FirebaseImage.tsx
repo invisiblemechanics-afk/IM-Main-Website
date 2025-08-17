@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getDownloadURL, ref } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
+import { storage } from '@/lib/firebase';
 import { LoaderOne } from '../ui/loader';
 
 interface FirebaseImageProps {

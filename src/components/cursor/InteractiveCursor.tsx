@@ -2,7 +2,7 @@
 
 import { motion, useSpring } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { useCursorSingleton } from '../../hooks/useCursorSingleton';
+import { useCursorSingleton } from '@/hooks/useCursorSingleton';
 
 const xy = { stiffness: 560, damping: 40, mass: 0.6 };
 const wh = { stiffness: 360, damping: 30, mass: 0.6 };

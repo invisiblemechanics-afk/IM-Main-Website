@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, doc } from 'firebase/firestore';
-import { firestore } from '../../../lib/firebase';
+import { firestore } from '@/lib/firebase';
 import { MockTest } from '../types';
 
 export function useTests() {

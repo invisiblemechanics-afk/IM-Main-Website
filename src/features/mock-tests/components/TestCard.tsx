@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Clock, Users, Info, BookOpen, Play, CheckCircle, Eye } from 'lucide-react';
 import { MockTest } from '../types';
 import { useTestAttempt } from '../hooks/useAttempts';
-import { formatDuration } from '../../../services/mockTestAttempts';
+import { formatDuration } from '@/services/mockTestAttempts';
 
 interface TestCardProps {
   test: MockTest;

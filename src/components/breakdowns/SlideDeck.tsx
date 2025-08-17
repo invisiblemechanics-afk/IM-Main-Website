@@ -7,7 +7,7 @@ import { QuestionSlide } from './QuestionSlide';
 import { useSlideNav } from './useSlideNav';
 import { LaTeXRenderer } from '../LaTeXRenderer';
 import { AskCommunityButton } from '../community/AskCommunityButton';
-import { COMMUNITY_ENABLED } from '../../lib/community';
+import { COMMUNITY_ENABLED } from '@/lib/community';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface SlideDeckProps {

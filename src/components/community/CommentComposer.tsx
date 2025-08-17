@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { MarkdownEditor } from './MarkdownEditor';
 import { LoaderOne } from '../ui/loader';
-import { createCommentSchema } from '../../lib/community/validation';
-import { commentService } from '../../services/community';
+import { createCommentSchema } from '@/lib/community/validation';
+import { commentService } from '@/services/community';
 import toast from 'react-hot-toast';
 
 interface CommentComposerProps {

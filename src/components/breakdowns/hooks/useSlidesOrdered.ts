@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   onSnapshot, query, orderBy, DocumentData, QueryDocumentSnapshot, getDocs
 } from 'firebase/firestore';
-import { slidesCol } from '../../../lib/paths';
+import { slidesCol } from '@/lib/paths';
 import type { Slide, TheorySlide, MCQSlide, NumericSlide } from '../types';
-import { normalizeSlideQuestion } from '../../../utils/normalizeSlideQuestion';
+import { normalizeSlideQuestion } from '@/utils/normalizeSlideQuestion';
 
 function mapDoc(d: QueryDocumentSnapshot<DocumentData>): Slide {
   const data = d.data();

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ListChecks, LibraryBig, Clock3, TrendingUp, Calendar, ArrowLeft } from 'lucide-react';
 import { useRecentAttempts } from '../hooks/useAttempts';
-import { formatDuration } from '../../../services/mockTestAttempts';
+import { formatDuration } from '@/services/mockTestAttempts';
 
 export default function MockTestsHome(): JSX.Element {
   const { attempts: recentAttempts, loading: attemptsLoading } = useRecentAttempts(3);

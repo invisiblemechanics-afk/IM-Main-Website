@@ -1,5 +1,5 @@
 import React from 'react';
-import { FirebaseBreakdownQuestion } from '../../lib/data/questions';
+import { FirebaseBreakdownQuestion } from '@/lib/data/questions';
 import { LaTeXRenderer } from '../LaTeXRenderer';
 
 interface BreakdownQuestionCardProps {

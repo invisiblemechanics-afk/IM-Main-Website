@@ -7,7 +7,7 @@ import {
 } from 'firebase/firestore';
 import ContinueLearningCard, { ContinueCandidate } from './ContinueLearningCard';
 // Import the existing Firebase client
-import { firestore } from '../../lib/firebase';
+import { firestore } from '@/lib/firebase';
 
 function toDate(x: any): Date | null {
   if (!x) return null;

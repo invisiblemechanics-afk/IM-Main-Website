@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import logoImg from '../assets/images/IM_logo.png';
+import logoImg from '@/assets/images/IM_logo.png';
 
 export const Logo: React.FC = () => {
   return (

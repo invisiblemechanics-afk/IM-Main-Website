@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { ThreadCard } from './ThreadCard';
 import { LoaderOne } from '../ui/loader';
-import { ThreadListItem, SortOption, TimeFilter } from '../../lib/community/types';
-import { threadService, voteService, searchService } from '../../services/community';
+import { ThreadListItem, SortOption, TimeFilter } from '@/lib/community/types';
+import { threadService, voteService, searchService } from '@/services/community';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 
 interface FeedProps {

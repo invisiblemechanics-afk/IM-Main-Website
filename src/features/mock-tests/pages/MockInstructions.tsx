@@ -1,21 +1,21 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { firestore } from '../../../lib/firebase';
-import { enterFullscreenNow } from '../../../utils/fullscreen';
+import { firestore } from '@/lib/firebase';
+import { enterFullscreenNow } from '@/utils/fullscreen';
 import { useTestAttempt } from '../hooks/useAttempts';
 import './nta-instructions.css';
 
-import ntaLogo from '../../../assets/images/NTA_logo.png';
-import moeLogo from '../../../assets/images/moe1.png';
-import azadiLogo from '../../../assets/images/akam.png';
-import Logo1 from '../../../assets/images/Logo1.png';
-import Logo2 from '../../../assets/images/Logo2.png';
-import Logo3 from '../../../assets/images/Logo3.png';
-import Logo4 from '../../../assets/images/Logo4.png';
-import Logo5 from '../../../assets/images/Logo5.png';
-import downIcon from '../../../../../src/assets/images/down.png';
-import upIcon from '../../../../../src/assets/images/up.png';
+import ntaLogo from '@/assets/images/NTA_logo.png';
+import moeLogo from '@/assets/images/moe1.png';
+import azadiLogo from '@/assets/images/akam.png';
+import Logo1 from '@/assets/images/Logo1.png';
+import Logo2 from '@/assets/images/Logo2.png';
+import Logo3 from '@/assets/images/Logo3.png';
+import Logo4 from '@/assets/images/Logo4.png';
+import Logo5 from '@/assets/images/Logo5.png';
+import downIcon from '@/assets/images/down.png';
+import upIcon from '@/assets/images/up.png';
 
 const NEXT_ROUTE_AFTER_INSTRUCTIONS = (testId: string) => `/mock-tests/attempt/${testId}`;
 

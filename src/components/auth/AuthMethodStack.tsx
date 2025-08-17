@@ -5,7 +5,7 @@ import { User } from 'firebase/auth';
 
 import { PhoneAuthWidget } from './PhoneAuthWidget';
 import { GoogleButton } from '../GoogleButton';
-import { useAuthForm } from '../../hooks/useAuthForm';
+import { useAuthForm } from '@/hooks/useAuthForm';
 import { AuthInput } from '../AuthInput';
 import { CircularCheckbox } from '../CircularCheckbox';
 import { OrDivider } from './Dividers';

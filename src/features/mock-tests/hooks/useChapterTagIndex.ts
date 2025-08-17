@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { firestore } from '../../../lib/firebase';
+import { firestore } from '@/lib/firebase';
 import { normalizeChapterId, normalizeTag } from '../utils/tagNormalize';
 
 type ChapterTagIndex = {

@@ -6,7 +6,7 @@ import { Hint } from './Hint';
 import { FirebaseImage } from './FirebaseImage';
 import { evaluateSingle, evaluateMulti, evaluateNumeric } from './utils';
 import { LaTeXRenderer } from '../LaTeXRenderer';
-import { logSlideCheck } from '../../utils/debug';
+import { logSlideCheck } from '@/utils/debug';
 
 interface QuestionSlideProps {
   slide: MCQSlide | NumericSlide;

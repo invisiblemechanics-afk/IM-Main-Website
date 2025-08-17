@@ -4,7 +4,7 @@ import {
   generateSlug, 
   extractExcerpt,
   calculateHotScore 
-} from '../../lib/community/utils';
+} from '@/lib/community/utils';
 import { Timestamp } from 'firebase/firestore';
 
 describe('Community Utils', () => {

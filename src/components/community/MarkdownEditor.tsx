@@ -12,7 +12,7 @@ import {
   ListOrdered,
   Quote
 } from 'lucide-react';
-import { sanitizeMarkdown } from '../../lib/community/utils';
+import { sanitizeMarkdown } from '@/lib/community/utils';
 
 interface MarkdownEditorProps {
   value: string;
