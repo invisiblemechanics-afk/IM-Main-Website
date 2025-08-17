@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { storage } from '../../lib/firebase';
+import { LoaderOne } from '../ui/loader';
 
 interface FirebaseImageProps {
   imagePath: string;
@@ -55,7 +56,7 @@ export const FirebaseImage: React.FC<FirebaseImageProps> = ({ imagePath, alt, cl
   if (loading) {
     return (
       <div className={`bg-gray-100 rounded-lg flex items-center justify-center min-h-[200px] ${className}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }

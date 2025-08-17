@@ -1,0 +1,25 @@
+.im-input {
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+  .im-input {
+    border-radius: 14px;
+  }
+}
+
+/* Prevent visual jump on focus and keep spacing consistent */
+.otp-cell { 
+  letter-spacing: 0.2em; 
+}
+
+/* Remove number spinners on some browsers */
+.otp-cell::-webkit-outer-spin-button,
+.otp-cell::-webkit-inner-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+.otp-cell[type="number"] { 
+  -moz-appearance: textfield; 
+}

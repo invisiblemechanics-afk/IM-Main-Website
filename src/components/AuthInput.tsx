@@ -67,6 +67,7 @@ export const AuthInput: React.FC<AuthInputProps> = ({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          data-native-cursor
           className={`
             peer w-full px-3 pt-6 pb-2 border rounded-lg bg-transparent text-gray-900 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200
             ${error 

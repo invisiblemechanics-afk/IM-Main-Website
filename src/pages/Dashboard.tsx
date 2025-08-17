@@ -3,11 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/Logo';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { LoaderOne } from '../components/ui/loader';
 import { BreakdownCard } from '../components/breakdowns/BreakdownCard';
 import { PracticeCard } from '../components/breakdowns/PracticeCard';
-import { ChartBarIcon, Squares2X2Icon, PlayCircleIcon, TrashIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { CommunityTileCard } from '../components/community/CommunityTileCard';
+import { CardTile } from '../components/ui/CardTile';
+import { SpotlightSection } from '../components/ui/SpotlightSection';
+import { COMMUNITY_ENABLED } from '../lib/community';
+import { ChartBarIcon, Squares2X2Icon, PlayCircleIcon, TrashIcon, ChevronRightIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import { getFirestore, collection, doc, onSnapshot, orderBy, query, Timestamp, deleteDoc } from 'firebase/firestore';
 import { getAllTopicsWithURLs } from '../lib/data/topics';
+import ContinueLearningCardStatic from '../components/im-dashboard/ContinueLearningCardStatic';
+import StudyCalendarStatic from '../components/im-dashboard/calendar/StudyCalendarStatic';
 
 interface Playlist {
   id: string;
@@ -165,17 +172,21 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Check for reduced motion preference
+  const prefersReduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg">
       {/* Header */}
-      <header className="bg-white shadow-md border-b border-gray-200">
+      <header className="bg-surface shadow-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Logo />
             
             <button
               onClick={handleSignOut}
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors border border-gray-300 hover:border-primary-300"
+              data-cursor="hover"
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-text-muted hover:text-accent hover:bg-accent-weak rounded-xl transition-colors border border-border hover:border-accent/40 focus-ring"
             >
               <span>Sign out</span>
             </button>
@@ -186,142 +197,155 @@ export const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Welcome Section */}
-        <div className="mx-auto max-w-3xl text-center py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Hi, {name}!
-          </h1>
-          <p className="text-gray-600 text-lg">
-            What would you like to do today?
-          </p>
-        </div>
-
-        {/* Action Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
-          {/* Diagnostic Card */}
-          <Link
-            to="/diagnostic"
-            className="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-primary-300 transition-all duration-200 cursor-pointer group h-full flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-                <ChartBarIcon className="w-6 h-6 text-primary-600" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Take a Diagnostic
-            </h3>
-            <p className="text-gray-600 flex-1">
-              Find my ideal Vectors playlist
+        <SpotlightSection>
+          <div className="mx-auto max-w-3xl text-center py-12">
+            <h1 className="text-[32px] leading-[36px] font-semibold tracking-tight2 text-text mb-2">
+              Hi, {name}!
+            </h1>
+            <p className="mt-2 text-[15px] leading-6 text-text-muted">
+              What would you like to do today?
             </p>
-            <div className="flex items-center justify-end mt-4">
-              <svg className="w-5 h-5 text-primary-400 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-200" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-              </svg>
+          </div>
+        </SpotlightSection>
+
+        <div className="mt-4 max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-5 place-items-stretch">
+
+            {/* Continue Learning – static, hardcoded */}
+            <div className="col-span-1 md:col-span-2 xl:col-span-2">
+              <ContinueLearningCardStatic />
             </div>
-          </Link>
 
-          {/* Manual Build Card */}
-          <Link
-            to="/builder/manual"
-            className="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-primary-300 transition-all duration-200 cursor-pointer group h-full flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-                <Squares2X2Icon className="w-6 h-6 text-primary-600" />
-              </div>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Build a Course Manually
-            </h3>
-            <p className="text-gray-600 flex-1">
-              Hand-pick topics & build playlist
-            </p>
-            <div className="flex items-center justify-end mt-4">
-              <svg className="w-5 h-5 text-primary-400 opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-200" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-              </svg>
-            </div>
-          </Link>
+            {/* Feature tiles (keep existing components, order as below) */}
+            <Link
+              to="/diagnostic"
+              data-cursor="surround"
+              className="block"
+            >
+              <CardTile
+                as="div"
+                title="Take a Diagnostic"
+                description="Find my ideal Vectors playlist"
+                icon={<ChartBarIcon className="w-6 h-6 text-accent" />}
+              />
+            </Link>
 
-          {/* Breakdowns Card */}
-          <BreakdownCard />
+            <Link
+              to="/builder/manual"
+              data-cursor="surround"
+              className="block"
+            >
+              <CardTile
+                as="div"
+                title="Build a Course Manually"
+                description="Hand-pick topics & build playlist"
+                icon={<Squares2X2Icon className="w-6 h-6 text-accent" />}
+              />
+            </Link>
 
-          {/* Practice Card */}
-          <PracticeCard />
-        </div>
+            <Link
+              to="/mock-tests"
+              data-cursor="surround"
+              className="block"
+            >
+              <CardTile
+                as="div"
+                title="Mock Tests"
+                description="Take full-length practice tests to boost exam performance"
+                icon={<ClipboardDocumentListIcon className="w-6 h-6 text-accent" />}
+              />
+            </Link>
 
-        {/* Recent Playlists Section */}
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Recent Playlists
-            </h2>
+            <BreakdownCard />
+
+            <PracticeCard />
             
-            {playlistsLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading playlists...</p>
-              </div>
-            ) : playlists.length === 0 ? (
-              <div className="text-center py-8">
-                <PlayCircleIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">
-                  No playlists yet. Create your first one using the options above!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {playlists.slice(0, 5).map((playlist) => (
-                  <div
-                    key={playlist.id}
-                    onClick={() => handlePlaylistClick(playlist)}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                        <PlayCircleIcon className="w-5 h-5 text-primary-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{playlist.name}</h3>
-                        {playlist.description && (
-                          <p className="text-sm text-gray-700 mt-1 overflow-hidden" 
-                             style={{
-                               display: '-webkit-box',
-                               WebkitLineClamp: 2,
-                               WebkitBoxOrient: 'vertical' as const,
-                               maxHeight: '2.5rem'
-                             }}>
-                            {playlist.description}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-500 mt-1">
-                          {playlist.topicTags.length} topic{playlist.topicTags.length !== 1 ? 's' : ''} • {formatDate(playlist.createdAt)}
+            {COMMUNITY_ENABLED && <CommunityTileCard />}
+
+            {/* Recent Playlists */}
+            <div className="col-span-1 md:col-span-3 xl:col-span-4">
+              <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
+                <h2 className="mb-3 text-[16px] font-semibold tracking-[-0.01em] text-text">
+                  Recent Playlists
+                </h2>
+                
+                {playlistsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="flex justify-center mb-4">
+                      <LoaderOne />
+                    </div>
+                    <p className="text-gray-500">Loading playlists...</p>
+                  </div>
+                ) : playlists.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="h-12 w-12 mx-auto mb-4 rounded-xl bg-[rgba(124,92,255,0.12)] ring-1 ring-[rgba(124,92,255,0.25)] flex items-center justify-center">
+                      <PlayCircleIcon className="w-6 h-6 text-accent" />
+                    </div>
+                    <p className="text-text-muted">
+                      No playlists yet. Create your first one using the options above!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {playlists.slice(0, 5).map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        onClick={() => handlePlaylistClick(playlist)}
+                        data-cursor="surround"
+                        className="group flex w-full items-center justify-between rounded-xl border border-transparent bg-surface px-4 py-4 text-left hover:border-accent/30 hover:shadow-cardHover focus-ring transition-all duration-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="h-9 w-9 rounded-lg bg-[rgba(124,92,255,0.12)] ring-1 ring-[rgba(124,92,255,0.25)] flex items-center justify-center">
+                            <PlayCircleIcon className="w-5 h-5 text-accent" />
+                          </div>
+                          <div>
+                            <h3 className="text-[14px] font-medium text-text">{playlist.name}</h3>
+                            {playlist.description && (
+                              <p className="text-[12.5px] text-text-muted mt-1 overflow-hidden" 
+                                 style={{
+                                   display: '-webkit-box',
+                                   WebkitLineClamp: 2,
+                                   WebkitBoxOrient: 'vertical' as const,
+                                   maxHeight: '2.5rem'
+                                 }}>
+                                {playlist.description}
+                              </p>
+                            )}
+                            <p className="text-[12.5px] text-text-muted mt-1">
+                              {playlist.topicTags.length} topic{playlist.topicTags.length !== 1 ? 's' : ''} • {formatDate(playlist.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={(e) => handleDeleteClick(e, playlist)}
+                            className="opacity-0 group-hover:opacity-100 p-2 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 focus-ring"
+                            title="Delete playlist"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                          <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-text-muted">&#8250;</span>
+                        </div>
+                      </button>
+                    ))}
+                    
+                    {playlists.length > 5 && (
+                      <div className="text-center pt-2">
+                        <p className="text-[12.5px] text-text-muted">
+                          And {playlists.length - 5} more...
                         </p>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={(e) => handleDeleteClick(e, playlist)}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                        title="Delete playlist"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                  </div>
-                ))}
-                
-                {playlists.length > 5 && (
-                  <div className="text-center pt-2">
-                    <p className="text-sm text-gray-500">
-                      And {playlists.length - 5} more...
-                    </p>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
+        </div>
+
+        {/* Study Calendar */}
+        <div className="mt-6 max-w-6xl mx-auto px-4">
+          <StudyCalendarStatic />
         </div>
       </main>
 

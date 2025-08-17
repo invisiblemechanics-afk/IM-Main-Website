@@ -6,6 +6,7 @@ import { Hint } from './Hint';
 import { FirebaseImage } from './FirebaseImage';
 import { evaluateSingle, evaluateMulti, evaluateNumeric } from './utils';
 import { LaTeXRenderer } from '../LaTeXRenderer';
+import { logSlideCheck } from '../../utils/debug';
 
 interface QuestionSlideProps {
   slide: MCQSlide | NumericSlide;
@@ -77,6 +78,8 @@ export const QuestionSlide: React.FC<QuestionSlideProps> = ({
   };
 
   const handleSubmit = () => {
+    const nq = (slide as any).normalizedQuestion;
+    
     if (slide.type === 'numeric') {
       const numericSlide = slide as NumericSlide;
       const answer = numericSlide.answer;
@@ -90,67 +93,29 @@ export const QuestionSlide: React.FC<QuestionSlideProps> = ({
       );
       onSubmit(values, state);
       setIsSubmitted(true);
-    } else {
-      const mcqSlide = slide as MCQSlide;
-      if (mcqSlide.type === 'mcq-single') {
-        // Handle both 'correct' and 'answerIndex' fields
-        let correctIndex: number;
-        if ('answerIndex' in mcqSlide && mcqSlide.answerIndex !== undefined) {
-          correctIndex = Number((mcqSlide as any).answerIndex);
-          console.log('QuestionSlide - Using answerIndex:', correctIndex);
-        } else if (mcqSlide.correct && mcqSlide.correct.length > 0) {
-          correctIndex = Number(mcqSlide.correct[0]);
-          console.log('QuestionSlide - Using correct[0]:', correctIndex);
-        } else {
-          correctIndex = 0;
-          console.log('QuestionSlide - No answer found, defaulting to 0');
-        }
+    } else if (nq) {
+      // Use normalized question data (0-based consistently)
+      const { type, choices, correctIndex, correctIndices } = nq;
+      
+      if (type === 'MCQ') {
+        const chosen = selectedOptions[0];
+        const isCorrect = correctIndex !== undefined && chosen === correctIndex;
         
-        const chosen = Number(selectedOptions[0]);
-        console.log('QuestionSlide - chosen:', chosen, 'correctIndex:', correctIndex);
+        logSlideCheck(slide);
         
-        // Check if answer is correct (handle both 0-based and 1-based indexing)
-        const isCorrect = correctIndex === chosen || correctIndex === chosen + 1;
-        console.log('QuestionSlide - isCorrect:', isCorrect);
-        
-        const newStates = Array((mcqSlide.options?.length ?? 4)).fill('neutral') as OptionState[];
-        newStates[selectedOptions[0]] = isCorrect ? 'green' : 'red';
+        const newStates = Array(choices.length).fill('neutral') as OptionState[];
+        newStates[chosen] = isCorrect ? 'green' : 'red';
         
         // If incorrect, also mark the correct option green
-        if (!isCorrect) {
-          // If correct answer is 1-based, convert to 0-based for display
-          const correctDisplayIndex = correctIndex > 0 && correctIndex <= (mcqSlide.options?.length || 4) 
-            ? correctIndex - 1 
-            : correctIndex;
-          if (correctDisplayIndex >= 0 && correctDisplayIndex < newStates.length) {
-            newStates[correctDisplayIndex] = 'green';
-          }
+        if (!isCorrect && correctIndex !== undefined && correctIndex >= 0 && correctIndex < newStates.length) {
+          newStates[correctIndex] = 'green';
         }
         
         setOptionStates(newStates);
-        onSubmit(selectedOptions[0], newStates[selectedOptions[0]]);
-      } else {
-        // Handle multi-answer MCQ
-        let correctArray: number[];
-        if ('answerIndices' in mcqSlide && (mcqSlide as any).answerIndices) {
-          correctArray = (mcqSlide as any).answerIndices.map((v: any) => Number(v));
-          console.log('QuestionSlide Multi - Using answerIndices:', correctArray);
-        } else if (mcqSlide.correct) {
-          correctArray = mcqSlide.correct.map((v) => Number(v));
-          console.log('QuestionSlide Multi - Using correct:', correctArray);
-        } else {
-          correctArray = [];
-          console.log('QuestionSlide Multi - No answer found');
-        }
-        
-        // Normalize to 0-based if needed (defensive)
-        const optionsLen = mcqSlide.options?.length || 4;
-        const hasZero = correctArray.includes(0);
-        const min = correctArray.length ? Math.min(...correctArray) : 0;
-        const max = correctArray.length ? Math.max(...correctArray) : 0;
-        const looksOneBased = !hasZero && min >= 1 && max <= optionsLen;
-        const normalizedCorrect = looksOneBased ? correctArray.map(v => v - 1) : correctArray;
-        const states = evaluateMulti(normalizedCorrect, selectedOptions.map(v => Number(v)), optionsLen);
+        onSubmit(chosen, newStates[chosen]);
+      } else if (type === 'MultipleAnswer') {
+        // Use normalized indices (already 0-based)
+        const states = evaluateMulti(correctIndices || [], selectedOptions, choices.length);
         setOptionStates(states);
         onSubmit(selectedOptions, states);
       }
@@ -198,17 +163,21 @@ export const QuestionSlide: React.FC<QuestionSlideProps> = ({
         </div>
       ) : (
         <div>
-          {(slide as MCQSlide).options.map((option, index) => (
-            <OptionBlock
-              key={index}
-              text={option}
-              state={optionStates[index]}
-              onClick={() => handleOptionClick(index)}
-              isMulti={slide.type === 'mcq-multi'}
-              isSelected={selectedOptions.includes(index)}
-              isSubmitted={isSubmitted}
-            />
-          ))}
+          {(() => {
+            const nq = (slide as any).normalizedQuestion;
+            const choices = nq?.choices || (slide as MCQSlide).options || [];
+            return choices.map((option: string, index: number) => (
+              <OptionBlock
+                key={index}
+                text={option}
+                state={optionStates[index]}
+                onClick={() => handleOptionClick(index)}
+                isMulti={slide.type === 'mcq-multi'}
+                isSelected={selectedOptions.includes(index)}
+                isSubmitted={isSubmitted}
+              />
+            ));
+          })()}
         </div>
       )}
 

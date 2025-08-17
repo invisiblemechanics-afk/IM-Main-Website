@@ -1,10 +1,41 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Additional validation for user updates
+      allow create: if request.auth != null 
+                    && request.auth.uid == userId;
+      
+      allow update: if request.auth != null 
+                    && request.auth.uid == userId
+                    && (request.resource.data.uid == userId || request.resource.data.uid == null);
+    }
+    
     // Allow users to read and write their own playlist documents
     match /users/{userId}/playlists/{playlistId} {
       allow read, write: if request.auth != null
                          && request.auth.uid == userId;
+    }
+    
+    // Per-user video progress for Continue Learning
+    match /users/{userId}/videoProgress/{videoId} {
+      allow read: if isSelf(userId);
+      allow write: if isSelf(userId);  // dashboard card only reads; writes happen during playback
+    }
+    
+    // Per-user practice sessions for Continue Learning
+    match /users/{userId}/practiceSessions/{sessionId} {
+      allow read: if isSelf(userId);
+      allow write: if isSelf(userId);  // dashboard card only reads; writes happen during practice
+    }
+    
+    // Per-user mock test attempts
+    match /users/{userId}/mockTestAttempts/{attemptId} {
+      allow read: if isSelf(userId);
+      allow write: if isSelf(userId);
     }
     
     // Allow authenticated users to read from Chapters collection
@@ -18,10 +49,11 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // breakdowns: public read only
+    // breakdowns: public read only, allow updates for slideCount field
     match /breakdowns/{bId} {
       allow read: if true;
       allow write: if false;
+      allow update: if signedIn(); // for slideCount backfill script
     }
     
     // slides under breakdowns: public read only
@@ -34,6 +66,64 @@ service cloud.firestore {
     match /userAnswers/{uaId} {
       allow create: if request.auth.uid == request.resource.data.userId;
       allow read, update, delete: if request.auth.uid == resource.data.userId;
+    }
+    
+    // Tests collection: authenticated users can read tests and their questions
+    match /Tests/{testId} {
+      allow read: if request.auth != null;
+      
+      // Questions subcollection under Tests
+      match /Questions/{questionId} {
+        allow read: if request.auth != null;
+      }
+    }
+    
+    // Community: Threads collection with subcollections
+    function signedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isSelf(uid) { 
+      return signedIn() && request.auth.uid == uid; 
+    }
+    
+    match /threads/{threadId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.author.id == request.auth.uid
+        && request.resource.data.author.username is string
+        && request.resource.data.title is string
+        && request.resource.data.bodyMarkdown is string
+        && request.resource.data.score == 0
+        && request.resource.data.commentCount == 0;
+
+      allow update, delete: if signedIn()
+        && resource.data.author.id == request.auth.uid;
+
+      match /votes/{uid} {
+        allow read: if true;
+        allow create, update, delete: if isSelf(uid)
+          && request.resource.data.value in [1, -1];
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+
+        allow create: if signedIn()
+          && request.resource.data.author.id == request.auth.uid
+          && request.resource.data.author.username is string
+          && request.resource.data.bodyMarkdown is string;
+
+        allow update, delete: if signedIn()
+          && resource.data.author.id == request.auth.uid;
+
+        match /votes/{uid} {
+          allow read: if true;
+          allow create, update, delete: if isSelf(uid)
+            && request.resource.data.value in [1, -1];
+        }
+      }
     }
     
     // Default rule - deny all other operations

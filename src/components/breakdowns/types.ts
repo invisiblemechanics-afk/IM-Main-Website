@@ -4,6 +4,11 @@ export interface TheorySlide {
   title: string;
   html: string;
   img?: string;
+  
+  // Optional fields for ordering (legacy docs may not have these)
+  order?: number;
+  createdAt?: import('firebase/firestore').Timestamp;
+  updatedAt?: import('firebase/firestore').Timestamp;
 }
 
 export interface MCQSlide {
@@ -15,6 +20,11 @@ export interface MCQSlide {
   correct: number[];
   hint?: string;
   img?: string;
+  
+  // Optional fields for ordering (legacy docs may not have these)
+  order?: number;
+  createdAt?: import('firebase/firestore').Timestamp;
+  updatedAt?: import('firebase/firestore').Timestamp;
 }
 
 export interface NumericSlide {
@@ -28,6 +38,11 @@ export interface NumericSlide {
   rangeMax?: number;
   hint?: string;
   img?: string;
+  
+  // Optional fields for ordering (legacy docs may not have these)
+  order?: number;
+  createdAt?: import('firebase/firestore').Timestamp;
+  updatedAt?: import('firebase/firestore').Timestamp;
 }
 
 export type Slide = TheorySlide | MCQSlide | NumericSlide;

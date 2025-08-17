@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllTopicsWithURLs, TopicWithURL } from '../lib/data/topics';
 import { getAllChapters } from '../lib/data/questions';
+import { LoaderOne } from '../components/ui/loader';
 import { Navigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { SavePlaylistModal } from '../components/SavePlaylistModal';
@@ -116,7 +117,7 @@ export const ManualBuilder: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }
@@ -257,7 +258,9 @@ export const ManualBuilder: React.FC = () => {
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <div className="flex justify-center mb-4">
+                  <LoaderOne />
+                </div>
                 <p className="text-gray-600">Loading topics...</p>
               </div>
             </div>
@@ -279,7 +282,9 @@ export const ManualBuilder: React.FC = () => {
               <div className="space-y-4 overflow-y-auto max-h-[70vh] mb-6 pr-4">
                 {isLoading ? (
                   <div className="text-center py-8">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+                    <div className="flex justify-center mb-4">
+                      <LoaderOne />
+                    </div>
                     <p className="text-gray-500">
                       Loading topics...
                     </p>
@@ -350,7 +355,9 @@ export const ManualBuilder: React.FC = () => {
                             <div className="space-y-2 ml-4">
                               {loadingChapters.has(chapter.id) ? (
                                 <div className="flex items-center justify-center py-4">
-                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-2"></div>
+                                  <div className="mr-2">
+                                    <LoaderOne />
+                                  </div>
                                   <span className="text-sm text-gray-500">Loading topics...</span>
                                 </div>
                               ) : filteredChapterTopics.length === 0 ? (

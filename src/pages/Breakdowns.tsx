@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getAllChapters } from '../lib/data/questions';
 import { Logo } from '../components/Logo';
 import { CircularCheckbox } from '../components/CircularCheckbox';
+import { LoaderOne } from '../components/ui/loader';
 import { BreakdownQuestionCard } from '../components/breakdowns/BreakdownQuestionCard';
 import { SlideDeck } from '../components/breakdowns/SlideDeck';
 import { OptionBlock } from '../components/breakdowns/OptionBlock';
@@ -14,9 +15,9 @@ import { LaTeXRenderer } from '../components/LaTeXRenderer';
 import { 
   getBreakdownQuestionsByChapter, 
   getFirebaseBreakdownQuestionById, 
-  getSlidesByQuestionId,
   FirebaseBreakdownQuestion 
 } from '../lib/data/questions';
+import { useSlidesOrdered } from '../components/breakdowns/hooks/useSlidesOrdered';
 import { Slide } from '../components/breakdowns/types';
 import styles from '../components/breakdowns/breakdowns.module.css';
 
@@ -59,9 +60,11 @@ export const Breakdowns: React.FC = () => {
   const [breakdownQuestions, setBreakdownQuestions] = useState<FirebaseBreakdownQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   
-  // Slides state for SlideDeck
-  const [currentSlides, setCurrentSlides] = useState<Slide[]>([]);
-  const [slidesLoading, setSlidesLoading] = useState(false);
+  // Slides state for SlideDeck - using ordered hook
+  const { slides: currentSlides, ready: slidesReady, error: slidesError } = useSlidesOrdered(
+    selectedChapter || '', 
+    selectedQuestion?.id || ''
+  );
   
   // Filter states
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<Set<QuestionType>>(new Set(['MCQ', 'Multiple Answer', 'Numerical']));
@@ -126,7 +129,7 @@ export const Breakdowns: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }
@@ -358,38 +361,47 @@ export const Breakdowns: React.FC = () => {
     setSelectedQuestion(null);
   };
 
-  const handleShowSlides = async () => {
+  const handleShowSlides = () => {
     if (!selectedQuestion || !selectedChapter) {
       console.error('No question or chapter selected for slides');
       return;
     }
-
-    try {
-      setSlidesLoading(true);
-      console.log('Loading slides for question:', selectedQuestion.id);
-      
-      const slides = await getSlidesByQuestionId(selectedChapter, selectedQuestion.id);
-      console.log('Loaded slides:', slides);
-      
-      setCurrentSlides(slides);
-      setViewMode('slides');
-    } catch (error) {
-      console.error('Error loading slides:', error);
-      // Fallback to empty slides or show error message
-      setCurrentSlides([]);
-      setViewMode('slides');
-    } finally {
-      setSlidesLoading(false);
-    }
+    
+    // Simply switch to slides view - the hook will handle loading
+    setViewMode('slides');
   };
 
   // Render slide deck view
   if (viewMode === 'slides') {
-    if (slidesLoading) {
+    if (slidesError) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-red-500 mb-4">Failed to load slides</p>
+            <p className="text-gray-600 text-sm mb-4">
+              Chapter: {selectedChapter || 'undefined'}, Question: {selectedQuestion?.id || 'undefined'}
+            </p>
+            <p className="text-gray-600 text-sm mb-4">
+              Error: {slidesError.message}
+            </p>
+            <button
+              onClick={() => setViewMode('question')}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              Back to Question
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!slidesReady) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <LoaderOne />
+            </div>
             <p className="text-gray-500">Loading breakdown slides...</p>
           </div>
         </div>
@@ -400,7 +412,9 @@ export const Breakdowns: React.FC = () => {
       <div className={styles.container}>
         <SlideDeck 
           slides={currentSlides}
-          onBackToQuestion={() => setViewMode('question')} 
+          onBackToQuestion={() => setViewMode('question')}
+          problemId={selectedQuestion?.id}
+          problemTitle={selectedQuestion?.question}
         />
       </div>
     );
@@ -554,7 +568,9 @@ export const Breakdowns: React.FC = () => {
             {/* Question Cards Grid */}
             {questionsLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <div className="flex justify-center mb-4">
+                  <LoaderOne />
+                </div>
                 <p className="text-gray-500">Loading breakdown questions...</p>
               </div>
             ) : (
@@ -599,7 +615,7 @@ export const Breakdowns: React.FC = () => {
               <div className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {chaptersLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                    <LoaderOne />
                     <span className="ml-2 text-sm text-gray-500">Loading chapters...</span>
                   </div>
                 ) : chaptersError ? (

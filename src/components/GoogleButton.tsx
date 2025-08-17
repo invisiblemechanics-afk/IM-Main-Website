@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LoaderOne } from './ui/loader';
 import { handleGoogleAuth } from '../utils/auth';
 
 export const GoogleButton: React.FC = () => {
@@ -27,10 +28,13 @@ export const GoogleButton: React.FC = () => {
         onClick={handleClick}
         disabled={isLoading}
         aria-label="Continue with Google"
+        data-cursor="button"
         className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
-          <div className="w-5 h-5 mr-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+          <div className="mr-3">
+            <LoaderOne />
+          </div>
         ) : (
           <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
             <path

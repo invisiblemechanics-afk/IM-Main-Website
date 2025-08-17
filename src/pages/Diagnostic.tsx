@@ -6,6 +6,7 @@ import { getRandomDiagnosticQuestions, DiagnosticQuestion, getAllChapters, Chapt
 import { getAllTopicsWithURLs } from '../lib/data/topics';
 import { CircularCheckbox } from '../components/CircularCheckbox';
 import { OptionState } from '../components/breakdowns/types';
+import { LoaderOne } from '../components/ui/loader';
 
 type Answer = {
   questionId: string;
@@ -83,7 +84,7 @@ export const Diagnostic: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <LoaderOne />
       </div>
     );
   }
@@ -192,7 +193,7 @@ export const Diagnostic: React.FC = () => {
             {chaptersLoading ? (
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto bg-primary-600/20 rounded-full flex items-center justify-center mb-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  <LoaderOne />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
                   Loading Chapters...
@@ -271,7 +272,7 @@ export const Diagnostic: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center animate-fade-in">
             <div className="mb-6">
               <div className="w-16 h-16 mx-auto bg-primary-600/20 rounded-full flex items-center justify-center mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <LoaderOne />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Loading Questions...

@@ -5,20 +5,20 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
-// Read config values from Vite environment variables, with fallbacks for demo
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key';
-const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com';
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project';
-const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com';
-const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789012';
-const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789012:web:abcdef123456789012345678';
-const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXXXXX';
+// Read config values from Vite environment variables, with fallbacks for the actual project
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyC-xfzgchsvlF6_cyAvHXNUP4u6XpUpCbw';
+const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'invisible-mechanics---2.firebaseapp.com';
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'invisible-mechanics---2';
+const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'invisible-mechanics---2.firebasestorage.app';
+const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '1087911820316';
+const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:1087911820316:web:469b8a189be2c005cc33d9';
+const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-2LWYB01JFD';
 const useEmulator = import.meta.env.VITE_USE_EMULATOR === 'true';
 
-// Log warning if using demo config
-if (apiKey === 'demo-api-key') {
-  console.warn('🚨 Using demo Firebase config. Create .env.local with real Firebase credentials for full functionality.');
-}
+// Log info about Firebase config
+console.log('🔥 Firebase initialized with project:', projectId);
+
+// console.log('Firebase config loaded:', { apiKey: apiKey.substring(0, 10) + '...', authDomain, projectId });
 
 const firebaseConfig = {
   apiKey,

@@ -6,14 +6,18 @@ import { TheorySlide } from './TheorySlide';
 import { QuestionSlide } from './QuestionSlide';
 import { useSlideNav } from './useSlideNav';
 import { LaTeXRenderer } from '../LaTeXRenderer';
+import { AskCommunityButton } from '../community/AskCommunityButton';
+import { COMMUNITY_ENABLED } from '../../lib/community';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface SlideDeckProps {
   slides: Slide[];
   onBackToQuestion?: () => void;
+  problemId?: string;
+  problemTitle?: string;
 }
 
-export const SlideDeck: React.FC<SlideDeckProps> = ({ slides, onBackToQuestion }) => {
+export const SlideDeck: React.FC<SlideDeckProps> = ({ slides, onBackToQuestion, problemId, problemTitle }) => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<SlideAnswer[]>([]);
@@ -127,6 +131,16 @@ export const SlideDeck: React.FC<SlideDeckProps> = ({ slides, onBackToQuestion }
           <ChevronRightIcon className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Ask Community Button */}
+      {COMMUNITY_ENABLED && problemId && (
+        <AskCommunityButton
+          problemId={problemId}
+          slideId={currentSlide.id}
+          problemTitle={problemTitle}
+          slideTitle={currentSlide.title}
+        />
+      )}
     </div>
   );
 };

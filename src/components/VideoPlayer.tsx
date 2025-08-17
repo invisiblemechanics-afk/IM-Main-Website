@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { storage } from '../lib/firebase';
+import { LoaderOne } from './ui/loader';
 
 interface VideoPlayerProps {
   storagePath: string;
@@ -191,7 +192,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ storagePath, onError }) => {
   if (loading) {
     return (
       <div className="text-center text-slate-400 p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
+        <div className="flex justify-center mb-2">
+          <LoaderOne />
+        </div>
         <p>Loading video…</p>
       </div>
     );

@@ -1,0 +1,60 @@
+/* Everything is namespaced to #nta-mock-root so it doesn't affect the rest of the app */
+#nta-mock-root { --nta-blue:#0a3a7a; --nta-grey:#e6ecf4; --nta-green:#4caf50; --nta-orange:#ff7a00; --nta-purple:#6a1b9a; --nta-dark:#222; --nta-border:#c9d6e5; font-family: "Segoe UI", Arial, Helvetica, sans-serif; color:#111; }
+#nta-mock-root .nta-topbar { background: var(--nta-blue); height: 48px; display:flex; align-items:center; padding:0 14px; color:#fff; }
+#nta-mock-root .nta-topbar .right { margin-left:auto; display:flex; gap:10px; align-items:center; border:1px solid rgba(255,255,255,.4); padding:6px 8px; border-radius:4px; background:#fff; color:#111; }
+#nta-mock-root .nta-topbar .home { display:flex; align-items:center; gap:6px; cursor:default; }
+
+#nta-mock-root .nta-header-strip { display:flex; align-items:center; justify-content:space-between; background:#fff url("/nta/bg.svg") right center/cover no-repeat; border-bottom:1px solid var(--nta-border); padding:12px 16px; }
+#nta-mock-root .nta-logos { display:flex; gap:18px; align-items:center; }
+#nta-mock-root .nta-logos img { height:46px; object-fit:contain; }
+#nta-mock-root .nta-info { display:flex; align-items:center; gap:12px; }
+#nta-mock-root .nta-candidate { display:flex; gap:10px; align-items:center; }
+#nta-mock-root .nta-avatar { width:56px; height:56px; border-radius:6px; background:#d9d9d9; display:flex; align-items:center; justify-content:center; font-weight:700; }
+#nta-mock-root .nta-meta small { display:block; color:#444; line-height:1.2; font-size:12px; white-space:nowrap; }
+#nta-mock-root .nta-lang { margin-left:auto; }
+#nta-mock-root .nta-lang select { color:#111; }
+#nta-mock-root .nta-timer { color:#fff; background:#0aa0ff; padding:2px 6px; border-radius:6px; font-weight:700; }
+
+#nta-mock-root .nta-layout { display:grid; grid-template-columns: 1fr 360px; gap:16px; padding:12px 16px 18px; background:#fff; }
+#nta-mock-root .nta-paper { border:1px solid var(--nta-border); background:#fff; }
+#nta-mock-root .nta-paper-head { padding:14px 16px; border-bottom:1px solid var(--nta-border); font-weight:700; }
+#nta-mock-root .nta-paper-body { position:relative; height:58vh; overflow:auto; padding:16px; }
+#nta-mock-root .nta-scroll-btn { position:sticky; right:10px; width:28px; height:28px; border-radius:50%; background:#1976d2; color:#fff; display:flex; align-items:center; justify-content:center; border:none; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+#nta-mock-root .nta-scroll-up { top:6px; float:right; }
+#nta-mock-root .nta-scroll-down { bottom:6px; float:right; }
+
+#nta-mock-root .nta-options { margin-top:12px; }
+#nta-mock-root .nta-option { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--nta-border); border-radius:2px; margin-bottom:10px; background:#fafcff; }
+#nta-mock-root .nta-option input { margin-top:4px; }
+#nta-mock-root .nta-actions { display:flex; gap:10px; align-items:center; padding:12px 16px; border-top:1px solid var(--nta-border); background: #f7fafc; }
+#nta-mock-root .btn { border:none; border-radius:2px; font-weight:700; padding:8px 14px; cursor:pointer; }
+#nta-mock-root .btn-green { background:#43a047; color:#fff; }
+#nta-mock-root .btn-grey { background:#e0e0e0; color:#111; }
+#nta-mock-root .btn-amber { background:#f39c12; color:#fff; }
+#nta-mock-root .btn-blue { background:#1976d2; color:#fff; }
+#nta-mock-root .btn-outline { background:#fff; border:1px solid var(--nta-border); }
+
+#nta-mock-root .nta-right { border:1px solid var(--nta-border); }
+#nta-mock-root .nta-legend { border-bottom:1px dashed var(--nta-border); padding:12px; }
+#nta-mock-root .nta-legend ul { list-style:none; display:grid; grid-template-columns: 1fr 1fr; gap:8px 12px; margin:0; padding:0; font-size:13px; }
+#nta-mock-root .badge { min-width:28px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; padding:0 6px; font-weight:700; color:#fff; }
+#nta-mock-root .b-notvisited { background:#9ea9b3; }
+#nta-mock-root .b-notanswered { background:var(--nta-orange); }
+#nta-mock-root .b-answered { background:var(--nta-green); }
+#nta-mock-root .b-marked { background:var(--nta-purple); }
+#nta-mock-root .b-ans-marked { background:linear-gradient(90deg, var(--nta-green) 50%, var(--nta-purple) 50%); }
+
+#nta-mock-root .nta-palette { padding:12px; max-height:58vh; overflow:auto; }
+#nta-mock-root .grid-nums { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
+#nta-mock-root .num { border:1px solid var(--nta-border); border-radius:4px; padding:8px 0; text-align:center; font-weight:700; cursor:pointer; user-select:none; }
+#nta-mock-root .num.notvisited { background:#fff; }
+#nta-mock-root .num.notanswered { background:#ffe9d6; border-color:#ffc89a; color:#d35400; }
+#nta-mock-root .num.answered { background:#e8f6ea; border-color:#bde5c2; color:#2e7d32; }
+#nta-mock-root .num.marked { background:#f0e6f7; border-color:#d7c2ec; color:#6a1b9a; }
+#nta-mock-root .num.ansmarked { background:linear-gradient(90deg, #e8f6ea 50%, #f0e6f7 50%); border-color:#bde5c2; }
+#nta-mock-root .num.active { outline:2px solid #1976d2; }
+#nta-mock-root .num-container { cursor:pointer; user-select:none; }
+#nta-mock-root .num-container.active { outline:2px solid #1976d2; border-radius:4px; }
+
+#nta-mock-root .nta-footer { background:var(--nta-blue); color:#fff; text-align:center; padding:10px 8px; font-size:12px; }
+

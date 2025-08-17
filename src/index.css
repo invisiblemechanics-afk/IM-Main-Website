@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Premium Cursor Design Tokens */
+:root {
+  --cursor-accent: #0A84FF;
+  --cursor-ring: rgba(10,132,255,0.75);
+  --cursor-halo: rgba(10,132,255,0.10);
+  --cursor-shadow: 0 0 36px rgba(10,132,255,0.30), inset 0 0 10px rgba(10,132,255,0.18);
+  --cursor-size: 36px;            /* free mode */
+  --cursor-size-hover: 48px;      /* generic hover */
+  --cursor-pad-button: 8px;       /* morph pad for buttons */
+  --cursor-pad-card: 12px;        /* morph pad for opt-in cards */
+  --cursor-radius-min: 16px;      /* min radius for surround */
+}
+
+/* Utility classes */
+.clamp-2 { 
+  display: -webkit-box; 
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical; 
+  overflow: hidden; 
+}
+
 /* Custom utilities */
 .line-clamp-3 {
   display: -webkit-box;
@@ -90,4 +111,82 @@ input:-webkit-autofill:focus {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Grid background pattern */
+.bg-grid-white\/\[0\.02\] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.02)'%3e%3cpath d='m0 .5h32m-32 16h32'/%3e%3cpath d='m.5 0v32m16-32v32'/%3e%3c/svg%3e");
+}
+
+/* 3D Transform utilities for CometCard */
+.perspective-distant {
+  perspective: 1000px;
+}
+
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+/* Interactive Cursor Styles */
+@media (pointer: fine) {
+  /* Hide native cursor everywhere EXCEPT text inputs and opt-outs when custom cursor is enabled */
+  html.custom-cursor *:not(input):not(textarea):not([contenteditable]):not([data-native-cursor]) {
+    cursor: none !important;
+  }
+  
+  /* Show native cursor when custom cursor is disabled */
+  html:not(.custom-cursor) * {
+    cursor: auto !important;
+  }
+}
+
+.im-cursor-ring {
+  border: 1px solid var(--cursor-ring);
+  background: radial-gradient(50% 50% at 50% 50%, var(--cursor-halo) 0%, rgba(0,0,0,0) 70%);
+  box-shadow: var(--cursor-shadow);
+  will-change: transform, width, height, border-radius, opacity;
+}
+
+/* Dark mode cursor */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cursor-accent: #8B5CF6;
+    --cursor-ring: rgba(139,92,246,0.75);
+    --cursor-halo: rgba(139,92,246,0.12);
+    --cursor-dot: rgba(245,247,250,0.85);
+    --cursor-shadow: 0 0 36px rgba(139,92,246,0.35), inset 0 0 10px rgba(139,92,246,0.25);
+  }
+}
+
+/* Respect accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .im-cursor { 
+    display: none !important; 
+  }
+}
+
+/* Premium dashboard background helpers */
+.spotlight-bg {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight-bg::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 520px;
+  z-index: -1;
+  background: radial-gradient(600px 240px at 50% 0%,
+    rgba(124, 92, 255, 0.10),
+    rgba(124, 92, 255, 0.06) 40%,
+    transparent 70%);
+  pointer-events: none;
+  mask-image: radial-gradient(70% 60% at 50% 0%, #000 40%, transparent 70%);
+}
+
+/* Focus ring for keyboard users */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124,92,255,.4), 0 0 0 6px rgba(124,92,255,.18);
+  border-radius: 1rem;
 }
