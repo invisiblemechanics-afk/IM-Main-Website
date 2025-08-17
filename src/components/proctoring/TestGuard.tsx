@@ -66,7 +66,11 @@ export default function TestGuard({
         return next;
       });
     }
-    onAutoSubmit(true); // pass true to indicate this is a violation auto-submit
+    
+    // Use setTimeout to ensure state updates are processed
+    setTimeout(() => {
+      onAutoSubmit(true); // pass true to indicate this is a violation auto-submit
+    }, 100);
   };
 
   const startViolation = (reason: string) => {
@@ -100,6 +104,10 @@ export default function TestGuard({
       setViolation((prevViolation) => {
         if (!prevViolation || !prevViolation.active) {
           console.log('No active violation, stopping timer');
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = undefined;
+          }
           return prevViolation;
         }
         
@@ -108,11 +116,16 @@ export default function TestGuard({
         
         if (newRemaining <= 0) {
           console.log('Timer reached 0, triggering auto-submit');
-          // Don't clear timers here as it might cause race conditions
+          // Clear the interval immediately to prevent multiple triggers
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = undefined;
+          }
+          // Trigger auto-submit with a small delay to ensure state is updated
           setTimeout(() => {
             autoNow(reason + " (timed out)", false);
           }, 50);
-          return { ...prevViolation, remaining: 0 };
+          return { ...prevViolation, remaining: 0, active: false };
         }
         
         return { ...prevViolation, remaining: newRemaining };

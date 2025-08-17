@@ -2,8 +2,7 @@ import {
   doc, 
   setDoc, 
   getDoc, 
-  serverTimestamp, 
-  runTransaction,
+  serverTimestamp,
   query,
   where,
   collection,
@@ -20,8 +19,8 @@ export interface UserProfile {
   photoURL?: string | null;
   phoneNumber?: string | null;
   username?: string | null;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: unknown;
+  updatedAt: unknown;
 }
 
 // Create or update user profile with phone and username

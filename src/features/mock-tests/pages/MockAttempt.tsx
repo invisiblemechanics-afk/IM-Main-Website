@@ -34,6 +34,7 @@ export default function MockAttempt() {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({});
   const [remaining, setRemaining] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const attemptStartRef = useRef<number>(Date.now());
 
@@ -237,66 +238,86 @@ export default function MockAttempt() {
   };
 
   const handleSubmitTest = async (isViolation: boolean = false) => {
-    if (!test) return;
+    if (!test) {
+      console.error('No test data available for submission');
+      return;
+    }
+    
+    if (isSubmitting) {
+      console.log('Submission already in progress, ignoring duplicate request');
+      return;
+    }
+    
+    console.log('Starting test submission...', { isViolation, testId: test.id });
+    setIsSubmitting(true);
     stopTiming();
 
-    // Evaluate in the same order as displayed (grouped by type)
-    const orderedQuestions: TestQuestion[] = [];
-    
-    // Add questions in the same order as groupedQuestions
-    groupedQuestions.sections.forEach(section => {
-      section.questions.forEach(q => {
-        orderedQuestions.push(q as unknown as TestQuestion);
+    try {
+      // Evaluate in the same order as displayed (grouped by type)
+      const orderedQuestions: TestQuestion[] = [];
+      
+      // Add questions in the same order as groupedQuestions
+      groupedQuestions.sections.forEach(section => {
+        section.questions.forEach(q => {
+          orderedQuestions.push(q as unknown as TestQuestion);
+        });
       });
-    });
 
-    const evals = orderedQuestions.map((qq) =>
-      evaluateOne(
-        qq,
-        responses[qq.id],
-        timeMap[qq.id] ?? 0,
-        { marksCorrect: undefined, marksWrong: undefined }
-      )
-    );
+      const evals = orderedQuestions.map((qq) =>
+        evaluateOne(
+          qq,
+          responses[qq.id],
+          timeMap[qq.id] ?? 0,
+          { marksCorrect: undefined, marksWrong: undefined }
+        )
+      );
 
-    const durationSec = Math.max(0, Math.floor((Date.now() - attemptStartRef.current) / 1000));
-    const analytics = aggregate(evals, orderedQuestions, durationSec, { marksCorrect: undefined, marksWrong: undefined });
+      const durationSec = Math.max(0, Math.floor((Date.now() - attemptStartRef.current) / 1000));
+      const analytics = aggregate(evals, orderedQuestions, durationSec, { marksCorrect: undefined, marksWrong: undefined });
 
-    // Persist attempt under user document
-    const uid = auth.currentUser?.uid || 'anon';
-    const attemptId = crypto.randomUUID();
-    const payload = {
-      testId: test.id,
-      testTitle: test.name,
-      exam: test.exam,
-      startedAt: new Date(attemptStartRef.current).toISOString(),
-      submittedAt: serverTimestamp(),
-      isViolation: isViolation, // Flag to indicate proctoring violation
-      totals: analytics.totals,
-      byDifficulty: analytics.byDifficulty,
-      byChapter: analytics.byChapter,
-      perQuestion: analytics.perQuestion.map((pq, index) => {
-        const question = orderedQuestions[index];
-        return {
-          qid: pq.qid,
-          result: pq.result,
-          score: pq.score,
-          timeSec: pq.timeSec,
-          difficulty: pq.difficulty,
-          type: pq.type,
-          chapter: pq.chapter ?? null,
-          chapterId: pq.chapterId ?? null,
-          skillTags: pq.skillTags ?? [],
-          response: responses[pq.qid] ?? null,
-          questionText: question.questionText || '',
-          choices: question.choices || [],
-        };
-      }),
-    };
+      // Persist attempt under user document
+      const uid = auth.currentUser?.uid || 'anon';
+      const attemptId = crypto.randomUUID();
+      const payload = {
+        testId: test.id,
+        testTitle: test.name,
+        exam: test.exam,
+        startedAt: new Date(attemptStartRef.current).toISOString(),
+        submittedAt: serverTimestamp(),
+        isViolation: isViolation, // Flag to indicate proctoring violation
+        totals: analytics.totals,
+        byDifficulty: analytics.byDifficulty,
+        byChapter: analytics.byChapter,
+        perQuestion: analytics.perQuestion.map((pq, index) => {
+          const question = orderedQuestions[index];
+          return {
+            qid: pq.qid,
+            result: pq.result,
+            score: pq.score,
+            timeSec: pq.timeSec,
+            difficulty: pq.difficulty,
+            type: pq.type,
+            chapter: pq.chapter ?? null,
+            chapterId: pq.chapterId ?? null,
+            skillTags: pq.skillTags ?? [],
+            response: responses[pq.qid] ?? null,
+            questionText: question.questionText || '',
+            choices: question.choices || [],
+          };
+        }),
+      };
 
-    await setDoc(doc(collection(db, 'users', uid, 'mockTestAttempts'), attemptId), payload, { merge: true });
+      console.log('Saving test attempt to Firestore...', attemptId);
+      await setDoc(doc(collection(db, 'users', uid, 'mockTestAttempts'), attemptId), payload, { merge: true });
 
-    navigate(`/mock-tests/result/${attemptId}`);
+      console.log('Test submitted successfully, navigating to results...');
+      navigate(`/mock-tests/result/${attemptId}`);
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      setIsSubmitting(false);
+      // Still navigate to prevent user from being stuck
+      alert('There was an error submitting your test. Please contact support.');
+    }
   };
 
   // Wrapper for proctoring auto-submit (must be idempotent)
@@ -401,7 +422,13 @@ export default function MockAttempt() {
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
               <button className="btn btn-outline" onClick={() => goTo(idx - 1)}>« BACK</button>
               <button className="btn btn-outline" onClick={() => goTo(idx + 1)}>NEXT »</button>
-              <button className="btn btn-green" onClick={handleSubmitTest}>SUBMIT</button>
+              <button 
+                className="btn btn-green" 
+                onClick={handleSubmitTest}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
+              </button>
             </div>
         </div>
       </div>

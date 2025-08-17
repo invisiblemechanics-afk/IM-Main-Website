@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { RecaptchaVerifier, getAuth } from 'firebase/auth';
+import { RecaptchaVerifier } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 export interface UseRecaptchaReturn {
@@ -41,14 +41,16 @@ export function useRecaptcha(): UseRecaptchaReturn {
         size: 'invisible',
         callback: () => {
           // reCAPTCHA solved - allow sign-in
+          console.log('reCAPTCHA solved successfully');
           setIsReady(true);
         },
         'expired-callback': () => {
           // reCAPTCHA expired - reset
+          console.warn('reCAPTCHA expired');
           setIsReady(false);
           setError('reCAPTCHA expired. Please try again.');
         },
-        'error-callback': (error: any) => {
+        'error-callback': (error: Error) => {
           console.error('reCAPTCHA error:', error);
           setError('reCAPTCHA error. Please try again.');
           setIsReady(false);

@@ -19,10 +19,7 @@ export const PhoneGuard: React.FC<PhoneGuardProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  const handlePhoneVerified = async (verifiedUser: User) => {
-    setIsVerifying(false);
+  const handlePhoneVerified = async (user: User) => {
     
     // Show success message
     toast.success('Phone verified successfully!', {

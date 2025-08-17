@@ -22,6 +22,7 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
   const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [phoneAuthError, setPhoneAuthError] = useState<string | null>(null);
 
   const {
     formData,
@@ -53,7 +54,17 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
   };
 
   const handlePhoneSuccess = (user: User) => {
+    // For phone auth, the success handling is done in PhoneAuthWidget
+    // This callback is only used for linking mode
     onSuccess?.(user);
+  };
+
+  const handlePhoneError = (error: string) => {
+    setPhoneAuthError(error);
+    // If phone auth fails due to configuration, auto-open email form
+    if (error.includes('not properly configured') || error.includes('not enabled')) {
+      setIsEmailOpen(true);
+    }
   };
 
   const handleEmailSubmit = (e: React.FormEvent) => {
@@ -100,7 +111,18 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
           <PhoneAuthWidget
             mode={mode === 'sign-in' ? 'signin' : 'signup'}
             onSuccess={handlePhoneSuccess}
+            onError={handlePhoneError}
           />
+          
+          {phoneAuthError && phoneAuthError.includes('not properly configured') && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                <strong>Setup Required:</strong> Phone authentication needs to be enabled in Firebase Console. 
+                <br />
+                <span className="text-xs">Use email authentication below as an alternative.</span>
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
 

@@ -15,6 +15,12 @@ const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:1087911820316:web:469b8
 const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-2LWYB01JFD';
 const useEmulator = import.meta.env.VITE_USE_EMULATOR === 'true';
 
+// Validate required configuration
+if (!apiKey || !authDomain || !projectId) {
+  console.error('❌ Firebase configuration is incomplete. Please check your environment variables.');
+  console.error('Required: VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID');
+}
+
 // Log info about Firebase config
 console.log('🔥 Firebase initialized with project:', projectId);
 
@@ -30,7 +36,14 @@ const firebaseConfig = {
   measurementId,
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+let app;
+try {
+  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  console.log('✅ Firebase app initialized successfully');
+} catch (error) {
+  console.error('❌ Firebase initialization failed:', error);
+  throw new Error('Failed to initialize Firebase. Please check your configuration.');
+}
 
 // Initialize and export services
 export const firestore = getFirestore(app);

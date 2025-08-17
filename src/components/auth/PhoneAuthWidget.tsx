@@ -7,16 +7,15 @@ import {
   User
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc, getDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { createOrUpdateUserProfile } from '@/lib/auth/userProfile';
-import { ChevronDownIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
-import { auth, firestore } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
+import { handlePhoneAuthSuccess } from '@/utils/auth';
 import { 
   COUNTRY_OPTIONS, 
-  DEFAULT_COUNTRY, 
   validatePhoneNumber, 
   formatToE164,
   formatForDisplay,
@@ -29,7 +28,7 @@ type AuthState = 'idle' | 'codeSent' | 'verifying' | 'success' | 'error';
 
 interface PhoneAuthWidgetProps {
   mode: 'signin' | 'signup' | 'link';
-  onSuccess: (user: any) => void;
+  onSuccess: (user: User) => void;
   onError?: (error: string) => void;
   existingUser?: User | null;
   className?: string;
@@ -128,6 +127,12 @@ export const PhoneAuthWidget: React.FC<PhoneAuthWidgetProps> = ({
           case 'auth/invalid-phone-number':
             setError('Please enter a valid phone number.');
             break;
+          case 'auth/invalid-app-credential':
+            setError('Phone authentication is not properly configured. Please contact support.');
+            break;
+          case 'auth/operation-not-allowed':
+            setError('Phone authentication is not enabled. Please contact support.');
+            break;
           default:
             setError(err.message || 'Failed to send OTP. Please try again.');
         }
@@ -177,7 +182,14 @@ export const PhoneAuthWidget: React.FC<PhoneAuthWidgetProps> = ({
 
       setState('success');
       toast.success(mode === 'link' ? 'Phone verified successfully!' : 'Signed in successfully!');
-      onSuccess(user);
+      
+      if (mode === 'link') {
+        // For linking mode, just call the success callback
+        onSuccess(user);
+      } else {
+        // For sign-in/sign-up mode, handle the full auth flow
+        await handlePhoneAuthSuccess(user);
+      }
     } catch (err) {
       console.error('Error verifying OTP:', err);
       setState('codeSent');
