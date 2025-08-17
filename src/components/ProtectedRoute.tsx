@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { PhoneGuard } from './auth/PhoneGuard';
+// import { PhoneGuard } from './auth/PhoneGuard'; // COMMENTED OUT - will be re-enabled in the future
 import { LoaderOne } from './ui/loader';
 
 interface ProtectedRouteProps {
@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const [showPhoneGuard, setShowPhoneGuard] = useState(false);
+  // const [showPhoneGuard, setShowPhoneGuard] = useState(false); // COMMENTED OUT - will be re-enabled in the future
 
   if (loading) {
     return (
@@ -24,6 +24,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/auth/signin" replace />;
   }
 
+  // COMMENTED OUT: Phone verification requirement - will be re-enabled in the future
+  // TODO: Re-enable phone verification requirement when needed
+  /*
   // Check if user needs phone verification (skip for onboarding page)
   const needsPhoneVerification = !user.phoneNumber && !window.location.pathname.includes('/onboarding');
   
@@ -43,6 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       </>
     );
   }
+  */
 
   return <>{children}</>;
 };

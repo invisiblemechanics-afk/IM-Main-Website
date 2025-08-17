@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { User } from 'firebase/auth';
 
-import { PhoneAuthWidget } from './PhoneAuthWidget';
+// import { PhoneAuthWidget } from './PhoneAuthWidget'; // COMMENTED OUT - will be re-enabled in the future
 import { GoogleButton } from '../GoogleButton';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import { AuthInput } from '../AuthInput';
@@ -84,7 +84,9 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Phone Authentication - Primary */}
+      {/* Phone Authentication - Primary - COMMENTED OUT FOR NOW */}
+      {/* TODO: Re-enable phone authentication in the future */}
+      {/*
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -127,20 +129,37 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
       </motion.div>
 
       <OrDivider />
+      */}
 
-      {/* Google Authentication - Secondary */}
+      {/* Google Authentication - Primary */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22, delay: 0.1 }}
+        transition={{ duration: 0.22 }}
+        className="relative"
       >
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-gray-300 transition-colors p-4">
+        <div className="rounded-2xl border border-primary-400/40 bg-white shadow-sm hover:border-primary-400/60 transition-colors p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary-100 rounded-lg">
+                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">Continue with Google</h3>
+                <p className="text-sm text-gray-600">Quick and secure sign-in</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-1 text-[11px] font-medium text-primary-600">
+              Recommended
+            </span>
+          </div>
           <GoogleButton />
-          <p className="text-xs text-gray-500 text-center mt-2">
-            We'll verify your phone after Google sign-in.
-          </p>
         </div>
       </motion.div>
+
+      <OrDivider />
 
       {/* Email Authentication - Collapsible */}
       <motion.div
@@ -157,7 +176,7 @@ export const AuthMethodStack: React.FC<AuthMethodStackProps> = ({ mode, onSucces
         >
           {isEmailOpen 
             ? `Hide email ${mode === 'sign-in' ? 'sign-in' : 'sign-up'}`
-            : 'Use email instead'
+            : `Or ${mode === 'sign-in' ? 'sign in' : 'sign up'} with email`
           }
           {isEmailOpen ? (
             <ChevronUpIcon className="w-4 h-4 inline ml-1" />

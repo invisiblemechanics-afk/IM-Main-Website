@@ -237,9 +237,10 @@ export default function MockAttempt() {
     setIdx(clamped);
   };
 
-  const handleSubmitTest = async (isViolation: boolean = false) => {
+  const handleSubmitTest = useCallback(async (isViolation: boolean = false) => {
     if (!test) {
       console.error('No test data available for submission');
+      alert('Test data is not available. Please refresh and try again.');
       return;
     }
     
@@ -247,8 +248,21 @@ export default function MockAttempt() {
       console.log('Submission already in progress, ignoring duplicate request');
       return;
     }
+
+    // Check authentication
+    if (!auth.currentUser) {
+      console.error('User not authenticated');
+      alert('You must be logged in to submit the test. Please sign in and try again.');
+      return;
+    }
     
-    console.log('Starting test submission...', { isViolation, testId: test.id });
+    console.log('Starting test submission...', { 
+      isViolation, 
+      isViolationBoolean: Boolean(isViolation),
+      testId: test.id, 
+      userId: auth.currentUser.uid,
+      questionsCount: Object.keys(responses).length
+    });
     setIsSubmitting(true);
     stopTiming();
 
@@ -263,6 +277,11 @@ export default function MockAttempt() {
         });
       });
 
+      if (orderedQuestions.length === 0) {
+        throw new Error('No questions found for evaluation');
+      }
+
+      console.log('Evaluating', orderedQuestions.length, 'questions...');
       const evals = orderedQuestions.map((qq) =>
         evaluateOne(
           qq,
@@ -276,55 +295,94 @@ export default function MockAttempt() {
       const analytics = aggregate(evals, orderedQuestions, durationSec, { marksCorrect: undefined, marksWrong: undefined });
 
       // Persist attempt under user document
-      const uid = auth.currentUser?.uid || 'anon';
-      const attemptId = crypto.randomUUID();
-      const payload = {
-        testId: test.id,
-        testTitle: test.name,
-        exam: test.exam,
-        startedAt: new Date(attemptStartRef.current).toISOString(),
-        submittedAt: serverTimestamp(),
-        isViolation: isViolation, // Flag to indicate proctoring violation
-        totals: analytics.totals,
-        byDifficulty: analytics.byDifficulty,
-        byChapter: analytics.byChapter,
-        perQuestion: analytics.perQuestion.map((pq, index) => {
-          const question = orderedQuestions[index];
-          return {
-            qid: pq.qid,
-            result: pq.result,
-            score: pq.score,
-            timeSec: pq.timeSec,
-            difficulty: pq.difficulty,
-            type: pq.type,
-            chapter: pq.chapter ?? null,
-            chapterId: pq.chapterId ?? null,
-            skillTags: pq.skillTags ?? [],
-            response: responses[pq.qid] ?? null,
-            questionText: question.questionText || '',
-            choices: question.choices || [],
-          };
-        }),
+      const uid = auth.currentUser.uid;
+      
+      // Generate a more reliable attempt ID
+      const attemptId = `attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Streamlined payload creation (remove unnecessary deep cleaning)
+      const cleanTotals = {
+        totalQuestions: analytics.totals.totalQuestions || 0,
+        attempted: analytics.totals.attempted || 0,
+        correct: analytics.totals.correct || 0,
+        incorrect: analytics.totals.incorrect || 0,
+        partial: analytics.totals.partial || 0,
+        unattempted: analytics.totals.unattempted || 0,
+        score: analytics.totals.score || 0,
+        maxScore: analytics.totals.maxScore || 0,
+        durationSec: analytics.totals.durationSec || 0,
       };
 
-      console.log('Saving test attempt to Firestore...', attemptId);
-      await setDoc(doc(collection(db, 'users', uid, 'mockTestAttempts'), attemptId), payload, { merge: true });
+      // Simplified cleaning for byDifficulty and byChapter
+      const cleanByDifficulty = analytics.byDifficulty || {};
+      const cleanByChapter = analytics.byChapter || {};
+
+      const payload = {
+        testId: String(test.id || ''),
+        testTitle: String(test.name || ''),
+        exam: String(test.exam || ''),
+        startedAt: new Date(attemptStartRef.current).toISOString(),
+        submittedAt: serverTimestamp(),
+        isViolation: Boolean(isViolation),
+        totals: cleanTotals,
+        byDifficulty: cleanByDifficulty,
+        byChapter: cleanByChapter,
+        perQuestion: analytics.perQuestion.map((pq) => ({
+          qid: pq.qid || '',
+          result: pq.result || 'unattempted',
+          score: pq.score || 0,
+          timeSec: pq.timeSec || 0,
+          difficulty: pq.difficulty || 'unknown',
+          type: pq.type || 'MCQ',
+          chapter: pq.chapter || null,
+          chapterId: pq.chapterId || null,
+          skillTags: pq.skillTags || [],
+          response: responses[pq.qid] || null,
+          questionText: pq.questionText || '',
+          choices: pq.choices || [],
+        })),
+      };
+
+      // Fast submission to Firestore
+      console.log('Submitting test attempt...', { attemptId, uid, isViolation: payload.isViolation });
+      
+      const docRef = doc(collection(db, 'users', uid, 'mockTestAttempts'), attemptId);
+      await setDoc(docRef, payload);
 
       console.log('Test submitted successfully, navigating to results...');
       navigate(`/mock-tests/result/${attemptId}`);
     } catch (error) {
       console.error('Error submitting test:', error);
+      
+      // More detailed error reporting
+      let errorMessage = 'There was an error submitting your test.';
+      if (error instanceof Error) {
+        console.error('Error details:', error.message, error.stack);
+        if (error.message.includes('Converting circular structure to JSON')) {
+          errorMessage = 'Data structure error. Please refresh the page and try again.';
+        } else if (error.message.includes('Failed to serialize test data')) {
+          errorMessage = 'Data serialization error. Please refresh the page and try again.';
+        } else if (error.message.includes('permission-denied')) {
+          errorMessage = 'Permission denied. Please check your account permissions and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('quota')) {
+          errorMessage = 'Storage quota exceeded. Please contact support.';
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       setIsSubmitting(false);
-      // Still navigate to prevent user from being stuck
-      alert('There was an error submitting your test. Please contact support.');
+      alert(errorMessage + ' Please contact support if the issue persists.');
     }
-  };
+  }, [test, groupedQuestions, responses, timeMap, navigate]);
 
   // Wrapper for proctoring auto-submit (must be idempotent)
   const handleAutoSubmit = useCallback(async (isViolation: boolean = false) => {
     console.log('Auto-submitting test due to proctoring violation:', isViolation);
     await handleSubmitTest(isViolation);
-  }, [test, responses, timeMap, navigate, testId]);
+  }, [handleSubmitTest]);
 
   const fmt = (sec:number) => {
     const h = Math.floor(sec/3600).toString().padStart(2,'0');
@@ -424,7 +482,7 @@ export default function MockAttempt() {
               <button className="btn btn-outline" onClick={() => goTo(idx + 1)}>NEXT »</button>
               <button 
                 className="btn btn-green" 
-                onClick={handleSubmitTest}
+                onClick={() => handleSubmitTest(false)}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}

@@ -18,7 +18,9 @@ export interface TestQuestion {
   chapter?: string;
   chapterId?: string;
   skillTags?: string[];
-  partialCorrect?: boolean; // MultipleAnswer only
+  partialCorrect?: boolean; // MultipleAnswer only (legacy)
+  partialScheme?: { mode?: string }; // New partial scoring structure
+  perOptionMarks?: number; // Marks per correct option in partial scoring
 }
 
 export type UserResponse =
@@ -85,15 +87,63 @@ export function evalMultiple(
     else wrongChosen++;
   });
 
-  if (!q.partialCorrect) {
+  // Check if partial scoring is enabled (check both old and new formats)
+  const hasPartialScoring = q.partialCorrect || (q.partialScheme?.mode === 'perOption');
+  const perOptionMarks = q.perOptionMarks || 1; // Default to 1 mark per option
+
+  console.log('🔍 MultipleAnswer Evaluation Debug:', {
+    questionId: q.id,
+    partialCorrect: q.partialCorrect,
+    partialScheme: q.partialScheme,
+    perOptionMarks: q.perOptionMarks,
+    hasPartialScoring,
+    correctAnswers: Array.from(correct),
+    userChoices: Array.from(chosen),
+    correctChosen,
+    wrongChosen,
+    marksCorrect,
+    marksWrong
+  });
+
+  if (!hasPartialScoring) {
+    console.log('📊 Using all-or-nothing scoring (no partial scoring enabled)');
     const exact = wrongChosen === 0 && correctChosen === correct.size && chosen.size === correct.size;
     return { result: (exact ? 'correct' : 'incorrect') as ResultKind, score: exact ? marksCorrect : marksWrong };
   }
 
-  if (wrongChosen > 0) return { result: 'incorrect' as ResultKind, score: marksWrong };
-  const frac = correct.size === 0 ? 0 : correctChosen / correct.size;
-  const score = Math.round(marksCorrect * frac * 1000) / 1000;
-  const result: ResultKind = frac === 1 ? 'correct' : frac === 0 ? 'incorrect' : 'partial';
+  console.log('📊 Using partial scoring - perOption mode');
+  
+  // For partial scoring: use perOptionMarks for each correct option selected
+  let score = correctChosen * perOptionMarks; // e.g., 2 correct × 1 mark = +2
+  
+  // Apply negative marking for wrong choices if configured
+  if (wrongChosen > 0 && marksWrong < 0) {
+    // Use the marksWrong value per wrong choice
+    score += wrongChosen * marksWrong;
+  }
+  
+  console.log('📊 Partial scoring calculation:', {
+    correctChosen,
+    perOptionMarks,
+    baseScore: correctChosen * perOptionMarks,
+    wrongChosen,
+    marksWrong,
+    negativeMarks: wrongChosen > 0 && marksWrong < 0 ? wrongChosen * marksWrong : 0,
+    finalScore: score
+  });
+  
+  // Determine result type
+  let result: ResultKind;
+  if (correctChosen === 0) {
+    result = 'incorrect';
+  } else if (correctChosen === correct.size && wrongChosen === 0) {
+    result = 'correct';
+  } else {
+    result = 'partial';
+  }
+  
+  console.log('📊 Final evaluation result:', { result, score });
+  
   return { result, score };
 }
 

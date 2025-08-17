@@ -17,6 +17,9 @@ export interface AttemptQuestion {
   range?: { min: number; max: number };
   marksCorrect?: number;
   marksWrong?: number;
+  partialCorrect?: boolean;
+  partialScheme?: { mode?: string };
+  perOptionMarks?: number;
   // Metadata for analytics
   difficultyBand?: string;
   chapter?: string;
@@ -94,6 +97,9 @@ export async function getHydratedTest(testId: string): Promise<HydratedTest> {
       chapter: qData.chapterId || qData.chapter || undefined,
       chapterId: qData.chapterId || qData.chapter || undefined,
       skillTags: Array.isArray(qData.skillTags) ? qData.skillTags : [],
+      partialCorrect: qData.partialCorrect || questionContent.partialCorrect || false,
+      partialScheme: qData.partialScheme || questionContent.partialScheme || undefined,
+      perOptionMarks: qData.perOptionMarks || questionContent.perOptionMarks || undefined,
     });
 
     // Debug metadata extraction if needed

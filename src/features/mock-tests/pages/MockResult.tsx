@@ -55,6 +55,8 @@ export default function MockResult() {
   const [selectedQuestionData, setSelectedQuestionData] = useState<AttemptDoc['perQuestion'][0] | null>(null);
   const [data, setData] = useState<AttemptDoc | null>(null);
   const [loading, setLoading] = useState(true);
+  const [questionDetails, setQuestionDetails] = useState<any>(null);
+  const [loadingQuestionDetails, setLoadingQuestionDetails] = useState(false);
 
   useEffect(() => {
     const uid = auth.currentUser?.uid || 'anon';
@@ -103,9 +105,73 @@ export default function MockResult() {
     setShowSolutionModal(true);
   };
 
-  const openQuestionModal = (questionData: AttemptDoc['perQuestion'][0]) => {
+  const fetchQuestionDetails = async (questionData: AttemptDoc['perQuestion'][0]) => {
+    try {
+      setLoadingQuestionDetails(true);
+      
+      // First, get the test data to find the question details
+      const testRef = doc(db, 'Tests', data?.testId || '');
+      const testSnap = await getDoc(testRef);
+      
+      if (!testSnap.exists()) {
+        console.warn('Test not found');
+        return null;
+      }
+      
+      // Get the question from Tests/{testId}/Questions/{questionId}
+      const questionRef = doc(testRef, 'Questions', questionData.qid);
+      const questionSnap = await getDoc(questionRef);
+      
+      if (!questionSnap.exists()) {
+        console.warn('Question not found in test');
+        return null;
+      }
+      
+      const testQuestionData = questionSnap.data();
+      console.log('Test question data:', testQuestionData);
+      
+      // Now get the actual question content from Chapters/{chapterId}-Test-Questions/{questionId}
+      if (testQuestionData.chapterId && testQuestionData.questionId) {
+        const chapter = testQuestionData.chapterId;
+        const qid = testQuestionData.questionId;
+        const collName = `${chapter}-Test-Questions`;
+        const chapterRef = doc(db, 'Chapters', chapter, collName, qid);
+        
+        console.log(`Fetching question content from: Chapters/${chapter}/${collName}/${qid}`);
+        
+        const chapterSnap = await getDoc(chapterRef);
+        if (chapterSnap.exists()) {
+          const chapterData = chapterSnap.data();
+          console.log('Fetched question content:', chapterData);
+          
+          // Merge test metadata with chapter content
+          return {
+            ...testQuestionData,
+            ...chapterData,
+            difficultyBand: testQuestionData.difficultyBand,
+            skillTags: testQuestionData.skillTags
+          };
+        }
+      }
+      
+      // Fallback to test question data if chapter data not found
+      return testQuestionData;
+    } catch (error) {
+      console.error('Error fetching question details:', error);
+      return null;
+    } finally {
+      setLoadingQuestionDetails(false);
+    }
+  };
+
+  const openQuestionModal = async (questionData: AttemptDoc['perQuestion'][0]) => {
     setSelectedQuestionData(questionData);
     setShowQuestionModal(true);
+    setQuestionDetails(null);
+    
+    // Fetch actual question details from Firestore
+    const details = await fetchQuestionDetails(questionData);
+    setQuestionDetails(details);
   };
 
   const getQuestionPreview = (questionText: string, maxLength: number = 80) => {
@@ -129,15 +195,134 @@ export default function MockResult() {
     return `${resultText}, ${scoreText}`;
   };
 
+  const isOptionCorrect = (index: number, questionDetails: any, questionData: AttemptDoc['perQuestion'][0]) => {
+    // Check if this option index is in the correct answer(s)
+    if (questionData.type === 'MCQ') {
+      // For MCQ, check answerIndex or answerIndices
+      if (typeof questionDetails?.answerIndex === 'number') {
+        return index === questionDetails.answerIndex;
+      }
+      if (typeof questionDetails?.correct === 'number') {
+        return index === questionDetails.correct;
+      }
+      if (Array.isArray(questionDetails?.answerIndices) && questionDetails.answerIndices.length > 0) {
+        return questionDetails.answerIndices.includes(index);
+      }
+      if (Array.isArray(questionDetails?.correct) && questionDetails.correct.length > 0) {
+        return questionDetails.correct.includes(index);
+      }
+    } else if (questionData.type === 'MultipleAnswer') {
+      // For MultipleAnswer, check answerIndices array
+      if (Array.isArray(questionDetails?.answerIndices)) {
+        return questionDetails.answerIndices.includes(index);
+      }
+      if (Array.isArray(questionDetails?.correct)) {
+        return questionDetails.correct.includes(index);
+      }
+    }
+    
+    return false;
+  };
+
+  const formatUserResponseFromFirestore = (questionData: AttemptDoc['perQuestion'][0], questionDetails: any) => {
+    if (!questionData.response) return 'No response';
+
+    const response = questionData.response;
+    const choices = questionDetails?.choices || [];
+    
+    // Helper function to get choice text by index
+    const getChoiceByIndex = (index: number): string => {
+      if (index < 0 || index >= choices.length) return `Option ${String.fromCharCode(65 + index)}`;
+      const choice = choices[index];
+      return typeof choice === 'string' ? choice : (choice?.text || choice?.content || `Option ${String.fromCharCode(65 + index)}`);
+    };
+
+    // Handle different response formats
+    if (questionData.type === 'MCQ') {
+      // For MCQ, response could be a number (index) or an object
+      let choiceIndex: number;
+      
+      if (typeof response === 'number') {
+        choiceIndex = response;
+      } else if (response && typeof response === 'object' && 'choiceIndex' in response) {
+        choiceIndex = response.choiceIndex;
+      } else if (response && typeof response === 'object' && response.kind === 'MCQ' && 'choiceIndex' in response) {
+        choiceIndex = response.choiceIndex;
+      } else {
+        return 'Invalid response format';
+      }
+      
+      if (choiceIndex === undefined || choiceIndex === null) return 'No response';
+      
+      const choiceLetter = String.fromCharCode(65 + choiceIndex);
+      const choiceText = getChoiceByIndex(choiceIndex);
+      return `(${choiceLetter}) ${choiceText}`;
+    }
+    
+    if (questionData.type === 'MultipleAnswer') {
+      // For MultipleAnswer, response could be an array or an object with choiceIndices
+      let choiceIndices: number[] = [];
+      
+      if (Array.isArray(response)) {
+        choiceIndices = response;
+      } else if (response && typeof response === 'object' && 'choiceIndices' in response && Array.isArray(response.choiceIndices)) {
+        choiceIndices = response.choiceIndices;
+      } else if (response && typeof response === 'object' && response.kind === 'MultipleAnswer' && Array.isArray(response.choiceIndices)) {
+        choiceIndices = response.choiceIndices;
+      }
+      
+      if (choiceIndices.length === 0) return 'No response';
+      
+      const selectedChoices = choiceIndices.map(index => {
+        const choiceLetter = String.fromCharCode(65 + index);
+        const choiceText = getChoiceByIndex(index);
+        return `(${choiceLetter}) ${choiceText}`;
+      });
+      
+      return selectedChoices.join(', ');
+    }
+    
+    if (questionData.type === 'Numerical') {
+      // For Numerical, response could be a string/number or an object with value
+      if (typeof response === 'string' || typeof response === 'number') {
+        return String(response);
+      } else if (response && typeof response === 'object' && 'value' in response) {
+        return String(response.value);
+      } else if (response && typeof response === 'object' && response.kind === 'Numerical' && 'value' in response) {
+        return String(response.value);
+      }
+    }
+    
+    // Fallback for any other format
+    return String(response);
+  };
+
   const formatUserResponse = (questionData: AttemptDoc['perQuestion'][0]) => {
     if (!questionData.response) return 'No response';
 
     const response = questionData.response;
     
+    // Helper function to extract text from choice (handle both string and object formats)
+    const getChoiceText = (choice: any): string => {
+      if (typeof choice === 'string') return choice;
+      if (choice?.text && choice.text.trim()) return choice.text;
+      if (choice?.content && choice.content.trim()) return choice.content;
+      if (choice?.label && choice.label.trim()) return choice.label;
+      
+      // If text is empty but we have an index, try to find the actual text from the original question data
+      // For now, return a placeholder indicating the choice index
+      if (typeof choice?.index === 'number') {
+        return `Option ${String.fromCharCode(65 + choice.index)}`;
+      }
+      
+      return `[Choice data: ${JSON.stringify(choice)}]`;
+    };
+    
     if (questionData.type === 'MCQ' && response.kind === 'MCQ') {
       if (response.choiceIndex === undefined) return 'No response';
       const choiceLetter = String.fromCharCode(65 + response.choiceIndex); // A, B, C, D
-      const choiceText = questionData.choices?.[response.choiceIndex] || '';
+      const choice = questionData.choices?.[response.choiceIndex];
+      const choiceText = choice ? getChoiceText(choice) : '';
       return `(${choiceLetter}) ${choiceText}`;
     }
     
@@ -145,7 +330,8 @@ export default function MockResult() {
       if (!response.choiceIndices || response.choiceIndices.length === 0) return 'No response';
       const selectedChoices = response.choiceIndices.map(index => {
         const choiceLetter = String.fromCharCode(65 + index);
-        const choiceText = questionData.choices?.[index] || '';
+        const choice = questionData.choices?.[index];
+        const choiceText = choice ? getChoiceText(choice) : '';
         return `(${choiceLetter}) ${choiceText}`;
       });
       return selectedChoices.join(', ');
@@ -154,6 +340,50 @@ export default function MockResult() {
     if (questionData.type === 'Numerical' && response.kind === 'Numerical') {
       if (response.value === undefined || response.value === '') return 'No response';
       return `${response.value}`;
+    }
+    
+    // Fallback: try to handle any response format
+    if (typeof response === 'string' || typeof response === 'number') {
+      return String(response);
+    }
+    
+    // If response structure doesn't match expected format, try to extract meaningful info
+    if (response && typeof response === 'object') {
+      // Handle array responses (multiple choice)
+      if (Array.isArray(response)) {
+        return response.map(idx => {
+          if (typeof idx === 'number' && questionData.choices?.[idx]) {
+            const choiceLetter = String.fromCharCode(65 + idx);
+            const choice = questionData.choices[idx];
+            const choiceText = getChoiceText(choice);
+            return `(${choiceLetter}) ${choiceText}`;
+          }
+          return String(idx);
+        }).join(', ');
+      }
+      
+      // Handle single choice responses
+      if ('choiceIndex' in response && typeof response.choiceIndex === 'number') {
+        const choiceLetter = String.fromCharCode(65 + response.choiceIndex);
+        const choice = questionData.choices?.[response.choiceIndex];
+        const choiceText = choice ? getChoiceText(choice) : '';
+        return `(${choiceLetter}) ${choiceText}`;
+      }
+      
+      // Handle multiple choice responses
+      if ('choiceIndices' in response && Array.isArray(response.choiceIndices)) {
+        return response.choiceIndices.map(index => {
+          const choiceLetter = String.fromCharCode(65 + index);
+          const choice = questionData.choices?.[index];
+          const choiceText = choice ? getChoiceText(choice) : '';
+          return `(${choiceLetter}) ${choiceText}`;
+        }).join(', ');
+      }
+      
+      // Handle value responses
+      if ('value' in response) {
+        return String(response.value);
+      }
     }
     
     return 'No response';
@@ -189,6 +419,12 @@ export default function MockResult() {
   }
 
   // Check for proctoring violations
+  console.log('MockResult - checking violation flag:', { 
+    isViolation: data.isViolation, 
+    isViolationType: typeof data.isViolation,
+    attemptId 
+  });
+  
   if (data.isViolation) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -566,35 +802,109 @@ export default function MockResult() {
             
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-4">
+                {loadingQuestionDetails && (
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                      <span className="text-blue-800">Loading question details...</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-2">Question:</h4>
                   <div className="text-gray-700">
-                    <LaTeXRenderer>{selectedQuestionData.questionText || ''}</LaTeXRenderer>
+                    <LaTeXRenderer>
+                      {questionDetails?.questionText || questionDetails?.text || selectedQuestionData.questionText || 'Question text not available'}
+                    </LaTeXRenderer>
                   </div>
                 </div>
                 
-                {selectedQuestionData.choices && selectedQuestionData.choices.length > 0 && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2">Options:</h4>
-                    <div className="space-y-2">
-                      {selectedQuestionData.choices.map((choice, index) => (
-                        <div key={index} className="flex items-start space-x-3">
-                          <span className="font-medium text-gray-600 min-w-[20px]">
-                            {String.fromCharCode(65 + index)}.
-                          </span>
-                          <div className="text-gray-700">
-                            <LaTeXRenderer>{choice}</LaTeXRenderer>
-                          </div>
-                        </div>
-                      ))}
+                {/* Show options for MCQ/MultipleAnswer or correct answer for Numerical */}
+                {selectedQuestionData.type === 'Numerical' ? (
+                  /* For Numerical questions, show the correct answer */
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h4 className="font-medium text-green-900 mb-2">Correct Answer:</h4>
+                    <div className="text-green-800 font-medium">
+                      <LaTeXRenderer>
+                        {(() => {
+                          // Try different possible field names for numerical answers
+                          const correctAnswer = questionDetails?.correctAnswer || 
+                                              questionDetails?.answer || 
+                                              questionDetails?.value ||
+                                              questionDetails?.correctValue ||
+                                              questionDetails?.answerValue ||
+                                              questionDetails?.range?.min ||
+                                              questionDetails?.range?.max;
+                          
+                          // If we have a range, display it properly
+                          if (questionDetails?.range && questionDetails.range.min !== undefined && questionDetails.range.max !== undefined) {
+                            if (questionDetails.range.min === questionDetails.range.max) {
+                              return String(questionDetails.range.min);
+                            } else {
+                              return `${questionDetails.range.min} to ${questionDetails.range.max}`;
+                            }
+                          }
+                          
+                          // If we have a single correct value
+                          if (correctAnswer !== undefined && correctAnswer !== null && correctAnswer !== '') {
+                            return String(correctAnswer);
+                          }
+                          
+                          // Debug: show all available fields to help identify the correct field name
+                          console.log('🔍 Numerical question fields:', questionDetails);
+                          
+                          return 'Correct answer not available';
+                        })()}
+                      </LaTeXRenderer>
                     </div>
                   </div>
+                ) : (
+                  /* For MCQ/MultipleAnswer, show options with correct ones highlighted */
+                  ((questionDetails?.choices && Array.isArray(questionDetails.choices) && questionDetails.choices.length > 0) || 
+                    (selectedQuestionData.choices && selectedQuestionData.choices.length > 0)) && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Options:</h4>
+                      <div className="space-y-2">
+                        {/* Use fetched choices if available, otherwise fall back to stored choices */}
+                        {(questionDetails?.choices || selectedQuestionData.choices || []).map((choice: any, index: number) => {
+                          // Check if this option is correct
+                          const isCorrect = isOptionCorrect(index, questionDetails, selectedQuestionData);
+                          
+                          return (
+                            <div 
+                              key={index} 
+                              className={`flex items-start space-x-3 p-2 rounded ${
+                                isCorrect 
+                                  ? 'bg-green-100 border border-green-300' 
+                                  : 'bg-white border border-gray-200'
+                              }`}
+                            >
+                              <span className={`font-medium min-w-[20px] ${
+                                isCorrect ? 'text-green-700' : 'text-gray-600'
+                              }`}>
+                                {String.fromCharCode(65 + index)}.
+                              </span>
+                              <div className={isCorrect ? 'text-green-800' : 'text-gray-700'}>
+                                <LaTeXRenderer>
+                                  {typeof choice === 'string' ? choice : (choice?.text || choice?.content || `Option ${String.fromCharCode(65 + index)}`)}
+                                </LaTeXRenderer>
+                              </div>
+                              {isCorrect && (
+                                <span className="ml-auto text-green-600 text-sm font-medium">✓ Correct</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
                 )}
 
                 <div className="bg-yellow-50 rounded-lg p-4">
                   <h4 className="font-medium text-yellow-900 mb-2">Your Answer:</h4>
                   <div className="text-yellow-800">
-                    <LaTeXRenderer>{formatUserResponse(selectedQuestionData)}</LaTeXRenderer>
+                    <LaTeXRenderer>{formatUserResponseFromFirestore(selectedQuestionData, questionDetails)}</LaTeXRenderer>
                   </div>
                 </div>
 

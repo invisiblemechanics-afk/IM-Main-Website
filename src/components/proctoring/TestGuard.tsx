@@ -20,10 +20,11 @@ export default function TestGuard({
   } | null>(null);
 
   const [strikes, setStrikes] = React.useState(0);
-  const [finalArmed, setFinalArmed] = React.useState(false);
 
   const intervalRef = React.useRef<number | undefined>();
   const timeoutRef = React.useRef<number | undefined>();
+  const violationProcessedRef = React.useRef<boolean>(false);
+  const violationCountRef = React.useRef<number>(0); // Track actual violation count
 
   const isFullscreen = () =>
     typeof document !== "undefined" &&
@@ -50,60 +51,78 @@ export default function TestGuard({
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
       else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+      
+      // Manually end violation after attempting to enter fullscreen
+      // This ensures the modal disappears even if the fullscreen event is delayed
+      setTimeout(() => {
+        if (isFullscreen() && violation?.active) {
+          console.log('🔄 Manually ending violation after entering fullscreen');
+          endViolation();
+        }
+      }, 200);
     } catch {
       // ignore; user can try again
     }
   };
 
   const autoNow = (why: string, countStrike: boolean = false) => {
-    console.log('Auto-submitting test:', why, 'countStrike:', countStrike);
+    console.log('🚀 AUTO-SUBMITTING TEST:', why, 'countStrike:', countStrike);
+    console.log('🚀 Current strikes at auto-submit:', strikes);
     clearTimers();
     setViolation(null);
     if (countStrike) {
       setStrikes((s) => {
         const next = s + 1;
-        if (next >= maxGraceIncidents) setFinalArmed(true);
         return next;
       });
     }
     
     // Use setTimeout to ensure state updates are processed
     setTimeout(() => {
+      console.log('🚀 Calling onAutoSubmit...');
       onAutoSubmit(true); // pass true to indicate this is a violation auto-submit
     }, 100);
   };
 
   const startViolation = (reason: string) => {
-    console.log('Starting violation:', reason, 'finalArmed:', finalArmed, 'violation?.active:', violation?.active);
+    // Increment violation count immediately
+    violationCountRef.current += 1;
+    const currentViolations = violationCountRef.current;
     
-    // Check if final warning is armed - immediate submit
-    if (finalArmed) {
-      console.log('Final warning armed - immediate submit');
-      autoNow(reason, false);
+    console.log('🚨 Starting violation #' + currentViolations + ':', reason);
+    console.log('🔍 Current strikes:', strikes, 'Current violations:', currentViolations, 'Max allowed:', maxGraceIncidents);
+    
+    // If this is the 4th+ violation, auto-submit immediately
+    if (currentViolations > maxGraceIncidents) {
+      console.log('⚡ VIOLATION #' + currentViolations + ' EXCEEDS LIMIT (' + maxGraceIncidents + ') - IMMEDIATE AUTO-SUBMIT');
+      autoNow(reason + ' (violation #' + currentViolations + ')', false);
       return;
     }
     
     // Check if already handling a violation
     if (violation?.active) {
-      console.log('Already handling violation, ignoring');
+      console.log('⏸️ Already handling violation, ignoring new violation');
       return;
     }
     
-    console.log('Setting up new violation with', graceSeconds, 'seconds grace period');
+    console.log('⏱️ Setting up new violation with', graceSeconds, 'seconds grace period');
     
     // Clear any existing timers first
     clearTimers();
+    
+    // Reset the processed flag for new violation
+    violationProcessedRef.current = false;
     
     // Set violation state
     setViolation({ active: true, reason, remaining: graceSeconds });
 
     // Start countdown timer - this is the main timer
-    console.log('Starting interval timer');
+    console.log('🔄 Starting interval timer for countdown');
     intervalRef.current = window.setInterval(() => {
-      console.log('Interval tick');
+      console.log('⏰ Interval tick - checking violation state');
       setViolation((prevViolation) => {
         if (!prevViolation || !prevViolation.active) {
-          console.log('No active violation, stopping timer');
+          console.log('❌ No active violation, stopping timer');
           if (intervalRef.current) {
             window.clearInterval(intervalRef.current);
             intervalRef.current = undefined;
@@ -112,17 +131,38 @@ export default function TestGuard({
         }
         
         const newRemaining = prevViolation.remaining - 1;
-        console.log('Timer countdown:', prevViolation.remaining, '→', newRemaining);
+        console.log('⏳ Timer countdown:', prevViolation.remaining, '→', newRemaining);
         
         if (newRemaining <= 0) {
-          console.log('Timer reached 0, triggering auto-submit');
+          console.log('💥 Timer reached 0, triggering auto-submit');
           // Clear the interval immediately to prevent multiple triggers
           if (intervalRef.current) {
             window.clearInterval(intervalRef.current);
             intervalRef.current = undefined;
           }
+          // Clear timeout as well
+          if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+            timeoutRef.current = undefined;
+          }
           // Trigger auto-submit with a small delay to ensure state is updated
           setTimeout(() => {
+            // Check if violation was already processed
+            if (violationProcessedRef.current) {
+              console.log('⚠️ Violation already processed, just auto-submitting');
+              autoNow(reason + " (timed out)", false);
+              return;
+            }
+            
+            console.log('⚠️ Violation timeout - checking strikes before incrementing');
+            violationProcessedRef.current = true; // Mark as processed
+            
+            // Count strike for timing out, then auto-submit
+            setStrikes((s) => {
+              const next = Math.min(s + 1, maxGraceIncidents); // Cap at max
+              console.log('📊 Strike added for timeout:', s, '→', next, '/', maxGraceIncidents);
+              return next;
+            });
             autoNow(reason + " (timed out)", false);
           }, 50);
           return { ...prevViolation, remaining: 0, active: false };
@@ -133,20 +173,55 @@ export default function TestGuard({
     }, 1000);
 
     // Backup timeout - should trigger slightly after the main timer
-    console.log('Setting backup timeout for', (graceSeconds + 1), 'seconds');
+    console.log('🔒 Setting backup timeout for', (graceSeconds + 1), 'seconds');
     timeoutRef.current = window.setTimeout(() => {
-      console.log('Backup timeout triggered - this should not happen if main timer works');
+      // Check if violation was already processed
+      if (violationProcessedRef.current) {
+        console.log('🚨 Backup timeout - violation already processed, just auto-submitting');
+        autoNow(reason + " (backup timeout)", false);
+        return;
+      }
+      
+      console.log('🚨 Backup timeout triggered - checking strikes before incrementing');
+      violationProcessedRef.current = true; // Mark as processed
+      
+      // Count strike for backup timeout, then auto-submit
+      setStrikes((s) => {
+        const next = Math.min(s + 1, maxGraceIncidents); // Cap at max
+        console.log('📊 Strike added for backup timeout:', s, '→', next, '/', maxGraceIncidents);
+        return next;
+      });
       autoNow(reason + " (backup timeout)", false);
     }, (graceSeconds + 1) * 1000);
   };
 
   const endViolation = () => {
-    if (!violation?.active) return;
+    if (!violation?.active) {
+      console.log('🔕 No active violation to end');
+      return;
+    }
+    
+    // Check if this violation was already processed
+    if (violationProcessedRef.current) {
+      console.log('🔕 Violation already processed, just clearing timers and state');
+      clearTimers();
+      setViolation(null);
+      return;
+    }
+    
+    console.log('✅ Ending violation - user returned in time');
+    
+    // Mark as processed to prevent double counting
+    violationProcessedRef.current = true;
+    
     clearTimers();
     setViolation(null);
+    
+    // Add strike for this violation (capped at max)
     setStrikes((s) => {
-      const next = s + 1; // count incident only when they return in time
-      if (next >= maxGraceIncidents) setFinalArmed(true);
+      const next = Math.min(s + 1, maxGraceIncidents); // Cap at max
+      console.log('📊 Strike added:', s, '→', next, '/', maxGraceIncidents);
+      console.log('📊 Violation count ref:', violationCountRef.current);
       return next;
     });
   };
@@ -155,43 +230,88 @@ export default function TestGuard({
     if (typeof document === "undefined") return;
 
     const onFsChange = () => {
-      console.log('Fullscreen change detected, isFullscreen:', isFullscreen());
-      if (!isFullscreen()) startViolation("Exited full screen");
-      else endViolation();
+      const fullscreenState = isFullscreen();
+      console.log('Fullscreen change detected, isFullscreen:', fullscreenState);
+      
+      // Add a small delay to ensure the fullscreen state has settled
+      setTimeout(() => {
+        if (!isFullscreen()) {
+          console.log('User exited fullscreen - starting violation');
+          startViolation("Exited full screen");
+        } else {
+          console.log('User returned to fullscreen - ending violation');
+          endViolation();
+        }
+      }, 100);
     };
 
     const onVisibility = () => {
-      console.log('Visibility change detected, state:', document.visibilityState);
-      if (document.visibilityState === "hidden")
-        startViolation("Switched tab / minimized");
-      else endViolation();
+      const visibilityState = document.visibilityState;
+      console.log('Visibility change detected, state:', visibilityState);
+      
+      setTimeout(() => {
+        if (document.visibilityState === "hidden") {
+          console.log('Tab/window hidden - starting violation');
+          startViolation("Switched tab / minimized");
+        } else {
+          console.log('Tab/window visible - ending violation');
+          endViolation();
+        }
+      }, 100);
     };
 
     const onBlur = () => {
       console.log('Window blur detected');
-      startViolation("Window lost focus");
+      setTimeout(() => {
+        console.log('Window lost focus - starting violation');
+        startViolation("Window lost focus");
+      }, 100);
     };
+    
     const onFocus = () => {
       console.log('Window focus detected');
-      endViolation();
+      setTimeout(() => {
+        console.log('Window regained focus - ending violation');
+        endViolation();
+      }, 100);
     };
 
+    // Add event listeners
     document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange); // Safari
+    document.addEventListener("mozfullscreenchange", onFsChange); // Firefox
+    document.addEventListener("MSFullscreenChange", onFsChange); // IE/Edge
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("blur", onBlur);
     window.addEventListener("focus", onFocus);
 
+    console.log('TestGuard event listeners attached');
+
     return () => {
+      console.log('TestGuard cleanup - removing event listeners');
       document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+      document.removeEventListener("mozfullscreenchange", onFsChange);
+      document.removeEventListener("MSFullscreenChange", onFsChange);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("focus", onFocus);
       clearTimers();
     };
-  }, []); // Remove problematic dependencies
+  }, []); // Empty dependency array to run only once
 
   const needsStart =
     typeof document !== "undefined" && !isFullscreen() && !violation?.active;
+
+  // Debug logging for state tracking
+  React.useEffect(() => {
+    console.log('🔍 TestGuard state:', { 
+      strikes, 
+      maxGraceIncidents, 
+      violationActive: violation?.active,
+      needsStart 
+    });
+  }, [strikes, violation?.active, needsStart]);
 
   return (
     <div className="relative">
@@ -245,7 +365,16 @@ export default function TestGuard({
                 </div>
 
                 <button
-                  onClick={enterFullscreen}
+                  onClick={() => {
+                    console.log('🔴 Back to Full Screen button clicked');
+                    enterFullscreen();
+                    // Immediately end violation when button is clicked
+                    // This provides instant feedback to the user
+                    if (violation?.active) {
+                      console.log('🔄 Immediately ending violation on button click');
+                      endViolation();
+                    }
+                  }}
                   className="px-6 py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors mb-4"
                 >
                   Back to Full Screen
@@ -274,10 +403,10 @@ export default function TestGuard({
                 </div>
               </div>
               
-              {finalArmed && (
+              {strikes >= maxGraceIncidents && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm font-semibold text-yellow-800">
-                    🚨 Final Warning: The next violation will submit your test immediately!
+                    🚨 Final Warning: You have used all 3 chances. The next violation will submit your test immediately!
                   </p>
                 </div>
               )}
@@ -286,11 +415,11 @@ export default function TestGuard({
         </div>
       )}
 
-      {finalArmed && !violation?.active && isFullscreen() && (
+      {strikes >= maxGraceIncidents && !violation?.active && isFullscreen() && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-yellow-400 text-black text-sm px-4 py-3 rounded-lg shadow-lg border border-yellow-500">
           <div className="flex items-center space-x-2">
             <span className="text-lg">🚨</span>
-            <span className="font-semibold">Final Warning: Next exit will submit immediately!</span>
+            <span className="font-semibold">Final Warning: 3/3 strikes used - Next exit will submit immediately!</span>
           </div>
         </div>
       )}
